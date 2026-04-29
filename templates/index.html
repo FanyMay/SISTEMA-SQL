@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor SQL Profesional</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📊 Gestor de Consultas SQL</h1>
+            <p>Ejecuta, edita y gestiona tus consultas de forma profesional</p>
+        </div>
+
+        <!-- Selector de Base de Datos -->
+        <div class="db-selector">
+            <label>🗄️ Seleccionar Base de Datos:</label>
+            <div class="db-buttons">
+                {% for key, db in databases.items() %}
+                <button class="db-btn" data-db="{{ key }}">
+                    {{ db.nombre }}
+                </button>
+                {% endfor %}
+            </div>
+            <div id="db-status" class="db-status"></div>
+        </div>
+
+        <!-- Editor SQL y Resultados -->
+        <div class="main-content">
+            <div class="editor-panel">
+                <div class="panel-header">
+                    <h3>✏️ Editor SQL</h3>
+                    <div class="editor-actions">
+                        <button id="btn-ejecutar" class="btn-primary">▶ Ejecutar</button>
+                        <button id="btn-guardar-actual" class="btn-secondary">💾 Guardar Consulta</button>
+                    </div>
+                </div>
+                <textarea id="sql-editor" class="sql-editor" placeholder="Escribe tu consulta SQL aquí..."></textarea>
+            </div>
+
+            <div class="results-panel">
+                <div class="panel-header">
+                    <h3>📋 Resultados</h3>
+                    <div id="result-info" class="result-info"></div>
+                </div>
+                <div id="results-container" class="results-container">
+                    <div class="empty-state">
+                        <p>Selecciona una base de datos y ejecuta una consulta</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Consultas Guardadas -->
+        <div class="saved-queries">
+            <div class="panel-header">
+                <h3>📚 Biblioteca de Consultas (80 consultas guardadas)</h3>
+                <button id="btn-consulta-nueva" class="btn-success">➕ Nueva Consulta Personalizada</button>
+            </div>
+            <div class="queries-grid">
+                {% for i in range(1, 81) %}
+                <div class="query-card" data-query-id="{{ i }}">
+                    <div class="query-header">
+                        <span class="query-number">Consulta #{{ i }}</span>
+                        <button class="btn-load-query" data-idx="{{ i }}">📂 Cargar</button>
+                    </div>
+                    <div class="query-preview">
+                        {% if consultas['query_' ~ i] %}
+                            {{ consultas['query_' ~ i][:50] }}{% if consultas['query_' ~ i]|length > 50 %}...{% endif %}
+                        {% else %}
+                            <span class="empty-query">[Vacío - Haz clic en Editar]</span>
+                        {% endif %}
+                    </div>
+                    <div class="query-actions">
+                        <button class="btn-edit-query" data-idx="{{ i }}">✏️ Editar</button>
+                        <button class="btn-save-query" data-idx="{{ i }}" style="display:none;">💾 Guardar</button>
+                    </div>
+                    <textarea class="query-textarea" data-idx="{{ i }}" style="display:none;" placeholder="Escribe tu consulta SQL...">{{ consultas['query_' ~ i] }}</textarea>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let dbActual = null;
+
+        // Selector de base de datos
+        document.querySelectorAll('.db-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const dbKey = btn.dataset.db;
+                const response = await fetch('/conectar', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({db_key: dbKey})
+                });
+                const result = await response.json();
+                if (result.exito) {
+                    dbActual = dbKey;
+                    document.querySelectorAll('.db-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    document.getElementById('db-status').innerHTML = `<span class="success">✅ ${result.mensaje}</span>`;
+                } else {
+                    document.getElementById('db-status').innerHTML = `<span class="error">❌ ${result.error}</span>`;
+                }
+            });
+        });
+
+        // Ejecutar consulta
+        document.getElementById('btn-ejecutar').addEventListener('click', async () => {
+            if (!dbActual) {
+                alert('Primero selecciona una base de datos');
+                return;
+            }
+            
+            const sql = document.getElementById('sql-editor').value;
+            if (!sql.trim()) {
+                alert('Escribe una consulta SQL');
+                return;
+            }
+            
+            const response = await fetch('/ejecutar', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({sql: sql})
+            });
+            const result = await response.json();
+            
+            if (result.exito) {
+                if (result.tipo === 'select') {
+                    mostrarTabla(result.encabezados, result.datos);
+                    document.getElementById('result-info').innerHTML = `<span class="success">✅ ${result.datos.length} filas obtenidas</span>`;
+                } else {
+                    document.getElementById('results-container').innerHTML = `<div class="success-message">${result.mensaje}</div>`;
+                    document.getElementById('result-info').innerHTML = `<span class="success">✅ ${result.mensaje}</span>`;
+                }
+            } else {
+                document.getElementById('results-container').innerHTML = `<div class="error-message">❌ Error: ${result.error}</div>`;
+                document.getElementById('result-info').innerHTML = `<span class="error">❌ Error en la consulta</span>`;
+            }
+        });
+        
+        function mostrarTabla(encabezados, datos) {
+            if (!encabezados || encabezados.length === 0) {
+                document.getElementById('results-container').innerHTML = '<div class="empty-state">La consulta no devolvió datos</div>';
+                return;
+            }
+            
+            let html = '<div class="table-wrapper"><table class="results-table">';
+            html += '<thead><tr>';
+            encabezados.forEach(enc => {
+                html += `<th>${enc}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            datos.forEach(fila => {
+                html += '<tr>';
+                fila.forEach(celda => {
+                    html += `<td>${celda !== null ? celda : '<span class="null-value">NULL</span>'}</td>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table></div>';
+            document.getElementById('results-container').innerHTML = html;
+        }
+        
+        // Cargar consulta guardada
+        document.querySelectorAll('.btn-load-query').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = btn.dataset.idx;
+                const textarea = document.querySelector(`.query-textarea[data-idx="${idx}"]`);
+                document.getElementById('sql-editor').value = textarea.value;
+            });
+        });
+        
+        // Editar consulta
+        document.querySelectorAll('.btn-edit-query').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = btn.dataset.idx;
+                const card = btn.closest('.query-card');
+                const preview = card.querySelector('.query-preview');
+                const textarea = card.querySelector('.query-textarea');
+                const saveBtn = card.querySelector('.btn-save-query');
+                
+                preview.style.display = 'none';
+                textarea.style.display = 'block';
+                btn.style.display = 'none';
+                saveBtn.style.display = 'inline-block';
+            });
+        });
+        
+        // Guardar consulta editada
+        document.querySelectorAll('.btn-save-query').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const idx = btn.dataset.idx;
+                const card = btn.closest('.query-card');
+                const textarea = card.querySelector('.query-textarea');
+                const preview = card.querySelector('.query-preview');
+                const editBtn = card.querySelector('.btn-edit-query');
+                const sql = textarea.value;
+                
+                const response = await fetch('/guardar_consulta', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({idx: idx, sql: sql})
+                });
+                const result = await response.json();
+                
+                if (result.exito) {
+                    preview.innerHTML = sql.substring(0, 50) + (sql.length > 50 ? '...' : '');
+                    preview.style.display = 'block';
+                    textarea.style.display = 'none';
+                    editBtn.style.display = 'inline-block';
+                    btn.style.display = 'none';
+                    alert('Consulta guardada correctamente');
+                } else {
+                    alert('Error al guardar');
+                }
+            });
+        });
+        
+        // Nueva consulta personalizada
+        document.getElementById('btn-consulta-nueva').addEventListener('click', () => {
+            document.getElementById('sql-editor').value = '';
+            document.getElementById('sql-editor').focus();
+            alert('Escribe tu nueva consulta en el editor y presiona "Ejecutar" o "Guardar Consulta" para almacenarla');
+        });
+        
+        // Guardar consulta actual del editor
+        document.getElementById('btn-guardar-actual').addEventListener('click', async () => {
+            const sqlActual = document.getElementById('sql-editor').value;
+            if (!sqlActual.trim()) {
+                alert('Escribe una consulta para guardar');
+                return;
+            }
+            
+            const idx = prompt('¿En qué número de consulta deseas guardarla? (1-80):', '1');
+            if (idx && idx >= 1 && idx <= 80) {
+                const response = await fetch('/guardar_consulta', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({idx: idx, sql: sqlActual})
+                });
+                const result = await response.json();
+                if (result.exito) {
+                    alert('Consulta guardada correctamente');
+                    location.reload();
+                } else {
+                    alert('Error al guardar');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

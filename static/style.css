@@ -1,0 +1,357 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+    background-color: #eef2f7;
+    color: #1a2c3e;
+    line-height: 1.5;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header */
+.header {
+    background-color: #2c6e9e;
+    color: white;
+    padding: 25px 30px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    letter-spacing: -0.3px;
+}
+
+.header p {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+/* Selector de BD */
+.db-selector {
+    background: white;
+    padding: 20px 25px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    border: 1px solid #d4dee5;
+}
+
+.db-selector label {
+    font-weight: 600;
+    color: #2c6e9e;
+    display: block;
+    margin-bottom: 12px;
+    font-size: 15px;
+}
+
+.db-buttons {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.db-btn {
+    background: #f0f4f8;
+    border: 1px solid #cbd7e4;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #2c6e9e;
+}
+
+.db-btn:hover {
+    background: #e3eaf1;
+    border-color: #2c6e9e;
+}
+
+.db-btn.active {
+    background: #2c6e9e;
+    border-color: #2c6e9e;
+    color: white;
+}
+
+.db-status {
+    margin-top: 15px;
+    font-size: 13px;
+}
+
+/* Paneles principales */
+.main-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    margin-bottom: 35px;
+}
+
+.editor-panel, .results-panel, .saved-queries {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #d4dee5;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.panel-header {
+    background: #f8fafc;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.panel-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a3a4f;
+}
+
+.editor-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.sql-editor {
+    width: 100%;
+    height: 300px;
+    padding: 15px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    border: none;
+    resize: vertical;
+    background: #fefefe;
+    color: #1e2a36;
+}
+
+.sql-editor:focus {
+    outline: none;
+    background: #ffffff;
+}
+
+.results-container {
+    padding: 15px;
+    min-height: 300px;
+    max-height: 500px;
+    overflow: auto;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.results-table th {
+    background: #eef2f7;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #1a3a4f;
+    border-bottom: 2px solid #cbd7e4;
+}
+
+.results-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.results-table tr:hover {
+    background: #f8fafc;
+}
+
+.null-value {
+    color: #999;
+    font-style: italic;
+}
+
+/* Consultas guardadas */
+.saved-queries {
+    margin-top: 10px;
+}
+
+.queries-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    padding: 20px;
+}
+
+.query-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px;
+    background: #fefefe;
+    transition: all 0.2s;
+}
+
+.query-card:hover {
+    border-color: #2c6e9e;
+    box-shadow: 0 2px 8px rgba(44,110,158,0.1);
+}
+
+.query-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.query-number {
+    font-weight: 600;
+    font-size: 13px;
+    color: #2c6e9e;
+}
+
+.query-preview {
+    font-family: monospace;
+    font-size: 12px;
+    color: #4a627a;
+    background: #f8fafc;
+    padding: 8px;
+    border-radius: 6px;
+    margin: 8px 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.empty-query {
+    color: #b0c4de;
+    font-style: italic;
+}
+
+.query-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.query-textarea {
+    width: 100%;
+    font-family: monospace;
+    font-size: 11px;
+    padding: 8px;
+    border: 1px solid #2c6e9e;
+    border-radius: 6px;
+    margin: 8px 0;
+    resize: vertical;
+}
+
+/* Botones */
+.btn-primary, .btn-secondary, .btn-success, .btn-load-query, .btn-edit-query, .btn-save-query {
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #2c6e9e;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #235b83;
+}
+
+.btn-secondary {
+    background: #eef2f7;
+    color: #2c6e9e;
+    border: 1px solid #cbd7e4;
+}
+
+.btn-secondary:hover {
+    background: #e3eaf1;
+}
+
+.btn-success {
+    background: #3c7a5e;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #2f624a;
+}
+
+.btn-load-query {
+    background: #eef2f7;
+    color: #2c6e9e;
+    padding: 4px 12px;
+    font-size: 12px;
+}
+
+.btn-edit-query {
+    background: white;
+    border: 1px solid #cbd7e4;
+    color: #4a627a;
+    padding: 4px 12px;
+    font-size: 12px;
+}
+
+.btn-save-query {
+    background: #2c6e9e;
+    color: white;
+    padding: 4px 12px;
+    font-size: 12px;
+}
+
+.success {
+    color: #2c7a4d;
+    font-weight: 500;
+}
+
+.error {
+    color: #c0392b;
+    font-weight: 500;
+}
+
+.success-message, .error-message {
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.success-message {
+    background: #e8f5e9;
+    color: #2c7a4d;
+}
+
+.error-message {
+    background: #ffebee;
+    color: #c0392b;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #9bb7d4;
+}
+
+.result-info {
+    font-size: 12px;
+}
