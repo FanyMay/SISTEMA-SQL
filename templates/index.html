@@ -85,174 +85,239 @@
     </div>
 
     <script>
-        let dbActual = null;
-
-        // Selector de base de datos
-        document.querySelectorAll('.db-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const dbKey = btn.dataset.db;
-                const response = await fetch('/conectar', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({db_key: dbKey})
-                });
-                const result = await response.json();
-                if (result.exito) {
-                    dbActual = dbKey;
-                    document.querySelectorAll('.db-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    document.getElementById('db-status').innerHTML = `<span class="success">✅ ${result.mensaje}</span>`;
-                } else {
-                    document.getElementById('db-status').innerHTML = `<span class="error">❌ ${result.error}</span>`;
-                }
-            });
+    let dbActual = null;
+    let dbKeyActual = null;  // Guardamos qué DB está conectada (db1, db2, db3)
+    
+    // Configuración: qué rangos de consultas muestra cada base de datos
+    const CONSULTAS_POR_DB = {
+        'db1': { inicio: 1, fin: 15, nombre: 'School' },      // 15 consultas
+        'db2': { inicio: 16, fin: 31, nombre: 'Reportes' },    // 16 consultas
+        'db3': { inicio: 32, fin: 61, nombre: 'Archivo' }      // 30 consultas
+    };
+    
+    // Función para filtrar y mostrar solo las consultas correspondientes
+    function filtrarConsultasPorDB(dbKey) {
+        const config = CONSULTAS_POR_DB[dbKey];
+        if (!config) return;
+        
+        const todasLasCards = document.querySelectorAll('.query-card');
+        
+        todasLasCards.forEach(card => {
+            const queryId = parseInt(card.dataset.queryId);
+            
+            if (queryId >= config.inicio && queryId <= config.fin) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
         });
-
-        // Ejecutar consulta
-        document.getElementById('btn-ejecutar').addEventListener('click', async () => {
-            if (!dbActual) {
-                alert('Primero selecciona una base de datos');
-                return;
-            }
-            
-            const sql = document.getElementById('sql-editor').value;
-            if (!sql.trim()) {
-                alert('Escribe una consulta SQL');
-                return;
-            }
-            
-            const response = await fetch('/ejecutar', {
+        
+        // Actualizar el título de la biblioteca
+        const tituloBiblioteca = document.querySelector('.saved-queries .panel-header h3');
+        if (tituloBiblioteca) {
+            const totalMostradas = config.fin - config.inicio + 1;
+            tituloBiblioteca.innerHTML = `📚 Biblioteca de Consultas (${config.nombre} - ${totalMostradas} consultas guardadas)`;
+        }
+    }
+    
+    // Función para mostrar TODAS las consultas (útil si no hay BD seleccionada)
+    function mostrarTodasLasConsultas() {
+        const todasLasCards = document.querySelectorAll('.query-card');
+        todasLasCards.forEach(card => {
+            card.style.display = 'block';
+        });
+        
+        const tituloBiblioteca = document.querySelector('.saved-queries .panel-header h3');
+        if (tituloBiblioteca) {
+            tituloBiblioteca.innerHTML = `📚 Biblioteca de Consultas (80 consultas guardadas)`;
+        }
+    }
+    
+    // Selector de base de datos (MODIFICADO)
+    document.querySelectorAll('.db-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const dbKey = btn.dataset.db;
+            const response = await fetch('/conectar', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({sql: sql})
+                body: JSON.stringify({db_key: dbKey})
+            });
+            const result = await response.json();
+            if (result.exito) {
+                dbActual = dbKey;
+                dbKeyActual = result.db_key || dbKey;
+                document.querySelectorAll('.db-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('db-status').innerHTML = `<span class="success">✅ ${result.mensaje}</span>`;
+                
+                // 🔥 FILTRAR CONSULTAS según la base de datos seleccionada
+                filtrarConsultasPorDB(dbKeyActual);
+            } else {
+                document.getElementById('db-status').innerHTML = `<span class="error">❌ ${result.error}</span>`;
+            }
+        });
+    });
+    
+    // Resto del código (ejecutar, mostrarTabla, etc.) se mantiene igual...
+    document.getElementById('btn-ejecutar').addEventListener('click', async () => {
+        if (!dbActual) {
+            alert('Primero selecciona una base de datos');
+            return;
+        }
+        const sql = document.getElementById('sql-editor').value;
+        if (!sql.trim()) {
+            alert('Escribe una consulta SQL');
+            return;
+        }
+        const response = await fetch('/ejecutar', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({sql: sql})
+        });
+        const result = await response.json();
+        if (result.exito && result.tipo === 'select') {
+            mostrarTabla(result.encabezados, result.datos);
+            document.getElementById('result-info').innerHTML = `<span class="success">✅ ${result.datos.length} filas obtenidas</span>`;
+        } else if (result.exito && result.mensaje) {
+            document.getElementById('results-container').innerHTML = `<div class="success-message">${result.mensaje}</div>`;
+            document.getElementById('result-info').innerHTML = `<span class="success">✅ ${result.mensaje}</span>`;
+        } else if (!result.exito) {
+            document.getElementById('results-container').innerHTML = `<div class="error-message">❌ ${result.error}</div>`;
+            document.getElementById('result-info').innerHTML = `<span class="error">Error</span>`;
+        }
+    });
+    
+    function mostrarTabla(encabezados, datos) {
+        if (!encabezados || encabezados.length === 0) {
+            document.getElementById('results-container').innerHTML = '<div class="empty-state">La consulta no devolvió datos</div>';
+            return;
+        }
+        
+        let html = '<div class="table-wrapper"><table class="results-table">';
+        html += '<thead><tr>';
+        encabezados.forEach(enc => {
+            html += `<th>${enc}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+        
+        datos.forEach(fila => {
+            html += '<tr>';
+            fila.forEach(celda => {
+                html += `<td>${celda !== null ? celda : '<span class="null-value">NULL</span>'}</td>`;
+            });
+            html += '</tr>';
+        });
+        
+        html += '</tbody></table></div>';
+        document.getElementById('results-container').innerHTML = html;
+    }
+    
+    // Cargar consulta guardada
+    document.querySelectorAll('.btn-load-query').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const idx = btn.dataset.idx;
+            const textarea = document.querySelector(`.query-textarea[data-idx="${idx}"]`);
+            document.getElementById('sql-editor').value = textarea.value;
+        });
+    });
+    
+    // Editar consulta
+    document.querySelectorAll('.btn-edit-query').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const idx = btn.dataset.idx;
+            const card = btn.closest('.query-card');
+            const preview = card.querySelector('.query-preview');
+            const textarea = card.querySelector('.query-textarea');
+            const saveBtn = card.querySelector('.btn-save-query');
+            
+            preview.style.display = 'none';
+            textarea.style.display = 'block';
+            btn.style.display = 'none';
+            saveBtn.style.display = 'inline-block';
+        });
+    });
+    
+    // Guardar consulta editada
+    document.querySelectorAll('.btn-save-query').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const idx = btn.dataset.idx;
+            const card = btn.closest('.query-card');
+            const textarea = card.querySelector('.query-textarea');
+            const preview = card.querySelector('.query-preview');
+            const editBtn = card.querySelector('.btn-edit-query');
+            const sql = textarea.value;
+            
+            const response = await fetch('/guardar_consulta', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({idx: idx, sql: sql})
             });
             const result = await response.json();
             
             if (result.exito) {
-                if (result.tipo === 'select') {
-                    mostrarTabla(result.encabezados, result.datos);
-                    document.getElementById('result-info').innerHTML = `<span class="success">✅ ${result.datos.length} filas obtenidas</span>`;
-                } else {
-                    document.getElementById('results-container').innerHTML = `<div class="success-message">${result.mensaje}</div>`;
-                    document.getElementById('result-info').innerHTML = `<span class="success">✅ ${result.mensaje}</span>`;
-                }
+                preview.innerHTML = sql.substring(0, 50) + (sql.length > 50 ? '...' : '');
+                preview.style.display = 'block';
+                textarea.style.display = 'none';
+                editBtn.style.display = 'inline-block';
+                btn.style.display = 'none';
+                alert('Consulta guardada correctamente');
             } else {
-                document.getElementById('results-container').innerHTML = `<div class="error-message">❌ Error: ${result.error}</div>`;
-                document.getElementById('result-info').innerHTML = `<span class="error">❌ Error en la consulta</span>`;
+                alert('Error al guardar');
             }
         });
-        
-        function mostrarTabla(encabezados, datos) {
-            if (!encabezados || encabezados.length === 0) {
-                document.getElementById('results-container').innerHTML = '<div class="empty-state">La consulta no devolvió datos</div>';
-                return;
-            }
-            
-            let html = '<div class="table-wrapper"><table class="results-table">';
-            html += '<thead><tr>';
-            encabezados.forEach(enc => {
-                html += `<th>${enc}</th>`;
-            });
-            html += '</tr></thead><tbody>';
-            
-            datos.forEach(fila => {
-                html += '<tr>';
-                fila.forEach(celda => {
-                    html += `<td>${celda !== null ? celda : '<span class="null-value">NULL</span>'}</td>`;
-                });
-                html += '</tr>';
-            });
-            
-            html += '</tbody></table></div>';
-            document.getElementById('results-container').innerHTML = html;
+    });
+    
+    // Nueva consulta personalizada
+    document.getElementById('btn-consulta-nueva').addEventListener('click', () => {
+        document.getElementById('sql-editor').value = '';
+        document.getElementById('sql-editor').focus();
+        alert('Escribe tu nueva consulta en el editor y presiona "Ejecutar" o "Guardar Consulta" para almacenarla');
+    });
+    
+    // Guardar consulta actual del editor
+    document.getElementById('btn-guardar-actual').addEventListener('click', async () => {
+        if (!dbActual) {
+            alert('Primero selecciona una base de datos para saber en qué rango guardar');
+            return;
         }
         
-        // Cargar consulta guardada
-        document.querySelectorAll('.btn-load-query').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const idx = btn.dataset.idx;
-                const textarea = document.querySelector(`.query-textarea[data-idx="${idx}"]`);
-                document.getElementById('sql-editor').value = textarea.value;
+        const sqlActual = document.getElementById('sql-editor').value;
+        if (!sqlActual.trim()) {
+            alert('Escribe una consulta para guardar');
+            return;
+        }
+        
+        // Obtener el rango según la base actual
+        const config = CONSULTAS_POR_DB[dbKeyActual];
+        if (!config) {
+            alert('Error: No se puede determinar el rango de consultas para esta base de datos');
+            return;
+        }
+        
+        const min = config.inicio;
+        const max = config.fin;
+        
+        const idx = prompt(`¿En qué número de consulta deseas guardarla? (${min}-${max} para ${config.nombre}):`, min);
+        if (idx && idx >= min && idx <= max) {
+            const response = await fetch('/guardar_consulta', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({idx: idx, sql: sqlActual})
             });
-        });
-        
-        // Editar consulta
-        document.querySelectorAll('.btn-edit-query').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const idx = btn.dataset.idx;
-                const card = btn.closest('.query-card');
-                const preview = card.querySelector('.query-preview');
-                const textarea = card.querySelector('.query-textarea');
-                const saveBtn = card.querySelector('.btn-save-query');
-                
-                preview.style.display = 'none';
-                textarea.style.display = 'block';
-                btn.style.display = 'none';
-                saveBtn.style.display = 'inline-block';
-            });
-        });
-        
-        // Guardar consulta editada
-        document.querySelectorAll('.btn-save-query').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const idx = btn.dataset.idx;
-                const card = btn.closest('.query-card');
-                const textarea = card.querySelector('.query-textarea');
-                const preview = card.querySelector('.query-preview');
-                const editBtn = card.querySelector('.btn-edit-query');
-                const sql = textarea.value;
-                
-                const response = await fetch('/guardar_consulta', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({idx: idx, sql: sql})
-                });
-                const result = await response.json();
-                
-                if (result.exito) {
-                    preview.innerHTML = sql.substring(0, 50) + (sql.length > 50 ? '...' : '');
-                    preview.style.display = 'block';
-                    textarea.style.display = 'none';
-                    editBtn.style.display = 'inline-block';
-                    btn.style.display = 'none';
-                    alert('Consulta guardada correctamente');
-                } else {
-                    alert('Error al guardar');
-                }
-            });
-        });
-        
-        // Nueva consulta personalizada
-        document.getElementById('btn-consulta-nueva').addEventListener('click', () => {
-            document.getElementById('sql-editor').value = '';
-            document.getElementById('sql-editor').focus();
-            alert('Escribe tu nueva consulta en el editor y presiona "Ejecutar" o "Guardar Consulta" para almacenarla');
-        });
-        
-        // Guardar consulta actual del editor
-        document.getElementById('btn-guardar-actual').addEventListener('click', async () => {
-            const sqlActual = document.getElementById('sql-editor').value;
-            if (!sqlActual.trim()) {
-                alert('Escribe una consulta para guardar');
-                return;
+            const result = await response.json();
+            if (result.exito) {
+                alert('Consulta guardada correctamente');
+                location.reload();
+            } else {
+                alert('Error al guardar');
             }
-            
-            const idx = prompt('¿En qué número de consulta deseas guardarla? (1-80):', '1');
-            if (idx && idx >= 1 && idx <= 80) {
-                const response = await fetch('/guardar_consulta', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({idx: idx, sql: sqlActual})
-                });
-                const result = await response.json();
-                if (result.exito) {
-                    alert('Consulta guardada correctamente');
-                    location.reload();
-                } else {
-                    alert('Error al guardar');
-                }
-            }
-        });
-    </script>
+        } else if (idx) {
+            alert(`El número debe estar entre ${min} y ${max} (consultas de ${config.nombre})`);
+        }
+    });
+    
+    // Al cargar la página, mostrar todas las consultas (sin BD seleccionada)
+    mostrarTodasLasConsultas();
+</script>
 </body>
 </html>

@@ -69,10 +69,14 @@ def index():
 @app.route('/conectar', methods=['POST'])
 def conectar():
     global conexion_actual
+    
+    # Marcar todas como no conectadas
+    for key in DATABASES:
+        DATABASES[key]['conectada'] = False
+    
     db_key = request.json.get('db_key')
     config = DATABASES[db_key]
     
-    # Cerrar conexión anterior si existe
     if conexion_actual:
         try:
             conexion_actual.close()
@@ -82,10 +86,10 @@ def conectar():
     conexion_actual = conectar_sql_server(config)
     
     if conexion_actual:
-        return jsonify({'exito': True, 'mensaje': f'✅ Conectado a {config["nombre"]}'})
+        DATABASES[db_key]['conectada'] = True
+        return jsonify({'exito': True, 'mensaje': f'✅ Conectado a {config["nombre"]}', 'db_key': db_key})
     else:
         return jsonify({'exito': False, 'error': f'❌ Error al conectar a {config["nombre"]}'})
-
 @app.route('/ejecutar', methods=['POST'])
 def ejecutar():
     global conexion_actual
