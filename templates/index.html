@@ -1,33 +1,30 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestor SQL Profesional</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
     <div class="container">
-        <!-- Header -->
         <div class="header">
             <h1>📊 Gestor de Consultas SQL</h1>
             <p>Ejecuta, edita y gestiona tus consultas de forma profesional</p>
         </div>
 
-        <!-- Selector de Base de Datos -->
         <div class="db-selector">
             <label>🗄️ Seleccionar Base de Datos:</label>
             <div class="db-buttons">
                 {% for key, db in databases.items() %}
-                <button class="db-btn" data-db="{{ key }}">
-                    {{ db.nombre }}
-                </button>
+                <button class="db-btn" data-db="{{ key }}">{{ db.nombre }}</button>
                 {% endfor %}
             </div>
             <div id="db-status" class="db-status"></div>
         </div>
 
-        <!-- Editor SQL y Resultados -->
         <div class="main-content">
             <div class="editor-panel">
                 <div class="panel-header">
@@ -35,9 +32,37 @@
                     <div class="editor-actions">
                         <button id="btn-ejecutar" class="btn-primary">▶ Ejecutar</button>
                         <button id="btn-guardar-actual" class="btn-secondary">💾 Guardar Consulta</button>
+                        <button id="btn-limpiar" class="btn-danger">🗑️ Limpiar</button>
                     </div>
                 </div>
-                <textarea id="sql-editor" class="sql-editor" placeholder="Escribe tu consulta SQL aquí..."></textarea>
+
+                <!-- 🔥 NUEVO: Pestañas para Editor SQL y Enunciado -->
+                <div class="editor-tabs">
+                    <button class="tab-btn active" data-tab="sql-tab">📝 SQL</button>
+                    <button class="tab-btn" data-tab="enunciado-tab">📖 Enunciado</button>
+                </div>
+
+                <!-- Contenido de la pestaña SQL -->
+                <div id="sql-tab" class="tab-content active">
+                    <textarea id="sql-editor" class="sql-editor"
+                        placeholder="Escribe tu consulta SQL aquí..."></textarea>
+                </div>
+
+                <!-- Contenido de la pestaña Enunciado -->
+                <div id="enunciado-tab" class="tab-content">
+                    <div class="enunciado-container">
+                        <div id="enunciado-actual" class="enunciado-actual">
+                            <span class="enunciado-label">📋 Consulta actual:</span>
+                            <span id="enunciado-texto" class="enunciado-texto">Sin consulta cargada</span>
+                        </div>
+                        <textarea id="enunciado-editor" class="enunciado-editor"
+                            placeholder="Escribe aquí el enunciado/descripción de tu consulta..."></textarea>
+                        <div class="enunciado-actions">
+                            <button id="btn-actualizar-enunciado" class="btn-secondary-small">🔄 Actualizar
+                                Enunciado</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="results-panel">
@@ -46,38 +71,48 @@
                     <div id="result-info" class="result-info"></div>
                 </div>
                 <div id="results-container" class="results-container">
-                    <div class="empty-state">
-                        <p>Selecciona una base de datos y ejecuta una consulta</p>
-                    </div>
+                    <div class="empty-state">Selecciona una base de datos y ejecuta una consulta</div>
                 </div>
             </div>
         </div>
 
-        <!-- Consultas Guardadas -->
         <div class="saved-queries">
             <div class="panel-header">
-                <h3>📚 Biblioteca de Consultas (80 consultas guardadas)</h3>
+                <h3>📚 Biblioteca de Consultas</h3>
                 <button id="btn-consulta-nueva" class="btn-success">➕ Nueva Consulta Personalizada</button>
             </div>
-            <div class="queries-grid">
+            <div class="queries-grid" id="queries-container">
                 {% for i in range(1, 81) %}
                 <div class="query-card" data-query-id="{{ i }}">
                     <div class="query-header">
                         <span class="query-number">Consulta #{{ i }}</span>
                         <button class="btn-load-query" data-idx="{{ i }}">📂 Cargar</button>
                     </div>
-                    <div class="query-preview">
-                        {% if consultas['query_' ~ i] %}
-                            {{ consultas['query_' ~ i][:50] }}{% if consultas['query_' ~ i]|length > 50 %}...{% endif %}
+                    <div class="query-enunciado">
+                        {% set consulta_data = consultas['query_' ~ i] %}
+                        {% if consulta_data is mapping and consulta_data.enunciado %}
+                        📖 {{ consulta_data.enunciado }}
                         {% else %}
-                            <span class="empty-query">[Vacío - Haz clic en Editar]</span>
+                        <span class="empty-enunciado">✏️ Sin enunciado - Haz clic en Editar</span>
+                        {% endif %}
+                    </div>
+                    <div class="query-preview" style="display: none;">
+                        {% if consulta_data is mapping and consulta_data.sql %}
+                        {{ consulta_data.sql[:100] }}{% if consulta_data.sql|length > 100 %}...{% endif %}
                         {% endif %}
                     </div>
                     <div class="query-actions">
                         <button class="btn-edit-query" data-idx="{{ i }}">✏️ Editar</button>
                         <button class="btn-save-query" data-idx="{{ i }}" style="display:none;">💾 Guardar</button>
                     </div>
-                    <textarea class="query-textarea" data-idx="{{ i }}" style="display:none;" placeholder="Escribe tu consulta SQL...">{{ consultas['query_' ~ i] }}</textarea>
+
+                    <!-- Campos ocultos para edición -->
+                    <div class="edit-panel" style="display:none;">
+                        <textarea class="query-enunciado-input" data-idx="{{ i }}"
+                            placeholder="Enunciado: ¿Qué hace esta consulta? (ej: Listar todos los cursos activos)"></textarea>
+                        <textarea class="query-sql-input" data-idx="{{ i }}"
+                            placeholder="Escribe tu consulta SQL..."></textarea>
+                    </div>
                 </div>
                 {% endfor %}
             </div>
@@ -86,25 +121,122 @@
 
     <script>
     let dbActual = null;
-    let dbKeyActual = null;  // Guardamos qué DB está conectada (db1, db2, db3)
+    let dbKeyActual = null;
+    let consultaActualEnunciado = '';
     
-    // Configuración: qué rangos de consultas muestra cada base de datos
     const CONSULTAS_POR_DB = {
-        'db1': { inicio: 1, fin: 15, nombre: 'School' },      // 15 consultas
-        'db2': { inicio: 16, fin: 31, nombre: 'Reportes' },    // 16 consultas
-        'db3': { inicio: 32, fin: 61, nombre: 'Archivo' }      // 30 consultas
+        'db1': { inicio: 1, fin: 15, nombre: 'School' },
+        'db2': { inicio: 16, fin: 31, nombre: 'Reportes' },
+        'db3': { inicio: 32, fin: 61, nombre: 'Archivo' }
     };
     
-    // Función para filtrar y mostrar solo las consultas correspondientes
+    // ============ FUNCIONES DE PESTAÑAS ============
+    function cambiarPestana(tabId) {
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.getElementById(tabId).classList.add('active');
+        document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
+    }
+    
+    function actualizarEnunciadoMostrado(enunciado) {
+        const enunciadoSpan = document.getElementById('enunciado-texto');
+        if (enunciadoSpan) {
+            if (enunciado && enunciado.trim()) {
+                enunciadoSpan.textContent = enunciado;
+                enunciadoSpan.classList.remove('sin-enunciado');
+            } else {
+                enunciadoSpan.textContent = 'Sin enunciado definido';
+                enunciadoSpan.classList.add('sin-enunciado');
+            }
+        }
+        const enunciadoEditor = document.getElementById('enunciado-editor');
+        if (enunciadoEditor && enunciado !== undefined) {
+            enunciadoEditor.value = enunciado;
+        }
+        consultaActualEnunciado = enunciado || '';
+    }
+    
+    // ============ FUNCIÓN LIMPIAR ============
+    function limpiarTodo() {
+        // Limpiar editor SQL
+        document.getElementById('sql-editor').value = '';
+        
+        // Limpiar editor de enunciado
+        const enunciadoEditor = document.getElementById('enunciado-editor');
+        if (enunciadoEditor) {
+            enunciadoEditor.value = '';
+        }
+        
+        // Limpiar el enunciado mostrado
+        actualizarEnunciadoMostrado('');
+        
+        // Limpiar tabla de resultados
+        const resultsContainer = document.getElementById('results-container');
+        if (resultsContainer) {
+            resultsContainer.innerHTML = '<div class="empty-state">🧹 Todo limpio. Selecciona una base de datos y escribe o carga una consulta.</div>';
+        }
+        
+        // Limpiar mensaje de información
+        const resultInfo = document.getElementById('result-info');
+        if (resultInfo) {
+            resultInfo.innerHTML = '';
+        }
+        
+        // Cambiar a la pestaña SQL
+        cambiarPestana('sql-tab');
+        
+        // Mostrar notificación
+        const dbStatus = document.getElementById('db-status');
+        if (dbStatus) {
+            dbStatus.innerHTML = '<span class="success">🧹 Editor y resultados limpiados</span>';
+            setTimeout(() => {
+                if (dbStatus.innerHTML === '<span class="success">🧹 Editor y resultados limpiados</span>') {
+                    dbStatus.innerHTML = '';
+                }
+            }, 2000);
+        }
+    }
+    
+    // ============ FUNCIONES DE CONSULTAS ============
+    async function cargarDatosConsulta(idx) {
+        const response = await fetch('/obtener_consulta', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({idx: idx})
+        });
+        const result = await response.json();
+        if (result.exito) {
+            return result.consulta;
+        }
+        return { enunciado: '', sql: '' };
+    }
+    
+    async function cargarEnunciadoConsulta(idx) {
+        const response = await fetch('/obtener_consulta', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({idx: idx})
+        });
+        const result = await response.json();
+        if (result.exito && result.consulta) {
+            actualizarEnunciadoMostrado(result.consulta.enunciado);
+            return result.consulta.enunciado;
+        }
+        return '';
+    }
+    
+    // ============ FILTRAR CONSULTAS ============
     function filtrarConsultasPorDB(dbKey) {
         const config = CONSULTAS_POR_DB[dbKey];
         if (!config) return;
         
         const todasLasCards = document.querySelectorAll('.query-card');
-        
         todasLasCards.forEach(card => {
             const queryId = parseInt(card.dataset.queryId);
-            
             if (queryId >= config.inicio && queryId <= config.fin) {
                 card.style.display = 'block';
             } else {
@@ -112,28 +244,43 @@
             }
         });
         
-        // Actualizar el título de la biblioteca
         const tituloBiblioteca = document.querySelector('.saved-queries .panel-header h3');
         if (tituloBiblioteca) {
             const totalMostradas = config.fin - config.inicio + 1;
-            tituloBiblioteca.innerHTML = `📚 Biblioteca de Consultas (${config.nombre} - ${totalMostradas} consultas guardadas)`;
+            tituloBiblioteca.innerHTML = `📚 Biblioteca de Consultas (${config.nombre} - ${totalMostradas} consultas)`;
         }
     }
     
-    // Función para mostrar TODAS las consultas (útil si no hay BD seleccionada)
     function mostrarTodasLasConsultas() {
-        const todasLasCards = document.querySelectorAll('.query-card');
-        todasLasCards.forEach(card => {
+        document.querySelectorAll('.query-card').forEach(card => {
             card.style.display = 'block';
         });
-        
         const tituloBiblioteca = document.querySelector('.saved-queries .panel-header h3');
         if (tituloBiblioteca) {
-            tituloBiblioteca.innerHTML = `📚 Biblioteca de Consultas (80 consultas guardadas)`;
+            tituloBiblioteca.innerHTML = `📚 Biblioteca de Consultas (80 consultas)`;
         }
     }
     
-    // Selector de base de datos (MODIFICADO)
+    // ============ EVENTOS ============
+    // Pestañas
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.dataset.tab;
+            cambiarPestana(tabId);
+        });
+    });
+    
+    // Botón limpiar
+    document.getElementById('btn-limpiar')?.addEventListener('click', limpiarTodo);
+    
+    // Actualizar enunciado
+    document.getElementById('btn-actualizar-enunciado')?.addEventListener('click', () => {
+        const nuevoEnunciado = document.getElementById('enunciado-editor').value;
+        actualizarEnunciadoMostrado(nuevoEnunciado);
+        alert('Enunciado actualizado localmente. Recuerda guardar la consulta para persistir los cambios.');
+    });
+    
+    // Seleccionar base de datos
     document.querySelectorAll('.db-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             const dbKey = btn.dataset.db;
@@ -149,8 +296,6 @@
                 document.querySelectorAll('.db-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 document.getElementById('db-status').innerHTML = `<span class="success">✅ ${result.mensaje}</span>`;
-                
-                // 🔥 FILTRAR CONSULTAS según la base de datos seleccionada
                 filtrarConsultasPorDB(dbKeyActual);
             } else {
                 document.getElementById('db-status').innerHTML = `<span class="error">❌ ${result.error}</span>`;
@@ -158,7 +303,7 @@
         });
     });
     
-    // Resto del código (ejecutar, mostrarTabla, etc.) se mantiene igual...
+    // Ejecutar consulta
     document.getElementById('btn-ejecutar').addEventListener('click', async () => {
         if (!dbActual) {
             alert('Primero selecciona una base de datos');
@@ -192,46 +337,49 @@
             document.getElementById('results-container').innerHTML = '<div class="empty-state">La consulta no devolvió datos</div>';
             return;
         }
-        
         let html = '<div class="table-wrapper"><table class="results-table">';
         html += '<thead><tr>';
-        encabezados.forEach(enc => {
-            html += `<th>${enc}</th>`;
-        });
-        html += '</tr></thead><tbody>';
-        
+        encabezados.forEach(enc => html += `<th>${enc}</th>`);
+        html += '</thead><tbody>';
         datos.forEach(fila => {
             html += '<tr>';
-            fila.forEach(celda => {
-                html += `<td>${celda !== null ? celda : '<span class="null-value">NULL</span>'}</td>`;
-            });
-            html += '</tr>';
+            fila.forEach(celda => html += `<td>${celda !== null ? celda : '<span class="null-value">NULL</span>'}</td>`);
+            html += '<tr>';
         });
-        
         html += '</tbody></table></div>';
         document.getElementById('results-container').innerHTML = html;
     }
     
     // Cargar consulta guardada
     document.querySelectorAll('.btn-load-query').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             const idx = btn.dataset.idx;
-            const textarea = document.querySelector(`.query-textarea[data-idx="${idx}"]`);
-            document.getElementById('sql-editor').value = textarea.value;
+            const consulta = await cargarDatosConsulta(idx);
+            document.getElementById('sql-editor').value = consulta.sql || '';
+            actualizarEnunciadoMostrado(consulta.enunciado || '');
+            cambiarPestana('sql-tab');
         });
     });
     
     // Editar consulta
     document.querySelectorAll('.btn-edit-query').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             const idx = btn.dataset.idx;
             const card = btn.closest('.query-card');
-            const preview = card.querySelector('.query-preview');
-            const textarea = card.querySelector('.query-textarea');
+            const enunciadoDiv = card.querySelector('.query-enunciado');
+            const previewDiv = card.querySelector('.query-preview');
+            const editPanel = card.querySelector('.edit-panel');
             const saveBtn = card.querySelector('.btn-save-query');
+            const enunciadoInput = card.querySelector('.query-enunciado-input');
+            const sqlInput = card.querySelector('.query-sql-input');
             
-            preview.style.display = 'none';
-            textarea.style.display = 'block';
+            const consulta = await cargarDatosConsulta(idx);
+            enunciadoInput.value = consulta.enunciado || '';
+            sqlInput.value = consulta.sql || '';
+            
+            enunciadoDiv.style.display = 'none';
+            previewDiv.style.display = 'none';
+            editPanel.style.display = 'block';
             btn.style.display = 'none';
             saveBtn.style.display = 'inline-block';
         });
@@ -242,22 +390,26 @@
         btn.addEventListener('click', async () => {
             const idx = btn.dataset.idx;
             const card = btn.closest('.query-card');
-            const textarea = card.querySelector('.query-textarea');
-            const preview = card.querySelector('.query-preview');
+            const enunciadoDiv = card.querySelector('.query-enunciado');
+            const editPanel = card.querySelector('.edit-panel');
             const editBtn = card.querySelector('.btn-edit-query');
-            const sql = textarea.value;
+            const enunciadoInput = card.querySelector('.query-enunciado-input');
+            const sqlInput = card.querySelector('.query-sql-input');
+            
+            const enunciado = enunciadoInput.value;
+            const sql = sqlInput.value;
             
             const response = await fetch('/guardar_consulta', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({idx: idx, sql: sql})
+                body: JSON.stringify({idx: idx, enunciado: enunciado, sql: sql})
             });
             const result = await response.json();
             
             if (result.exito) {
-                preview.innerHTML = sql.substring(0, 50) + (sql.length > 50 ? '...' : '');
-                preview.style.display = 'block';
-                textarea.style.display = 'none';
+                enunciadoDiv.innerHTML = enunciado ? `📖 ${enunciado}` : '<span class="empty-enunciado">✏️ Sin enunciado - Haz clic en Editar</span>';
+                enunciadoDiv.style.display = 'block';
+                editPanel.style.display = 'none';
                 editBtn.style.display = 'inline-block';
                 btn.style.display = 'none';
                 alert('Consulta guardada correctamente');
@@ -270,39 +422,50 @@
     // Nueva consulta personalizada
     document.getElementById('btn-consulta-nueva').addEventListener('click', () => {
         document.getElementById('sql-editor').value = '';
+        document.getElementById('enunciado-editor').value = '';
+        actualizarEnunciadoMostrado('');
         document.getElementById('sql-editor').focus();
-        alert('Escribe tu nueva consulta en el editor y presiona "Ejecutar" o "Guardar Consulta" para almacenarla');
+        cambiarPestana('sql-tab');
+        alert('Escribe tu nueva consulta en el editor y presiona "Guardar Consulta" para almacenarla');
     });
     
-    // Guardar consulta actual del editor
+    // Guardar consulta actual
     document.getElementById('btn-guardar-actual').addEventListener('click', async () => {
         if (!dbActual) {
-            alert('Primero selecciona una base de datos para saber en qué rango guardar');
+            alert('Primero selecciona una base de datos');
             return;
         }
         
         const sqlActual = document.getElementById('sql-editor').value;
+        const enunciadoActual = document.getElementById('enunciado-editor').value || consultaActualEnunciado;
+        
         if (!sqlActual.trim()) {
             alert('Escribe una consulta para guardar');
             return;
         }
         
-        // Obtener el rango según la base actual
         const config = CONSULTAS_POR_DB[dbKeyActual];
         if (!config) {
-            alert('Error: No se puede determinar el rango de consultas para esta base de datos');
+            alert('Error: No se puede determinar el rango de consultas');
             return;
+        }
+        
+        let enunciado = enunciadoActual;
+        if (!enunciado || !enunciado.trim()) {
+            enunciado = prompt('Escribe un enunciado/descripción de esta consulta (ej: "Listar todos los cursos"):', '');
+            if (enunciado === null) return;
+            actualizarEnunciadoMostrado(enunciado);
         }
         
         const min = config.inicio;
         const max = config.fin;
+        const idx = prompt(`¿En qué número guardar? (${min}-${max} para ${config.nombre}):`, min);
         
-        const idx = prompt(`¿En qué número de consulta deseas guardarla? (${min}-${max} para ${config.nombre}):`, min);
         if (idx && idx >= min && idx <= max) {
             const response = await fetch('/guardar_consulta', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({idx: idx, sql: sqlActual})
+                body: JSON.stringify({idx: idx, enunciado: enunciado, sql: sqlActual})
             });
             const result = await response.json();
             if (result.exito) {
@@ -312,12 +475,14 @@
                 alert('Error al guardar');
             }
         } else if (idx) {
-            alert(`El número debe estar entre ${min} y ${max} (consultas de ${config.nombre})`);
+            alert(`El número debe estar entre ${min} y ${max}`);
         }
     });
     
-    // Al cargar la página, mostrar todas las consultas (sin BD seleccionada)
+    // Inicializar
     mostrarTodasLasConsultas();
+    cambiarPestana('sql-tab');
 </script>
 </body>
+
 </html>

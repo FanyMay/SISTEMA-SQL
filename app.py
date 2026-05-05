@@ -6,33 +6,37 @@ import pyodbc
 app = Flask(__name__)
 app.secret_key = 'mi_clave_secreta_123'
 
-# ⚠️ CONFIGURA AQUÍ TUS 3 BASES DE DATOS ⚠️
+# Configuración de bases de datos
+#Stefany\MSSQLSERVER2025
 DATABASES = {
     'db1': {
         'nombre': 'School',
-        'server': 'DESKTOP-F3M1EN1',  # Cambia por tu servidor
-        'database': 'School',            # Cambia por el nombre de tu BD
-        'driver': '{ODBC Driver 17 for SQL Server}'
+        'server': 'DESKTOP-F3M1EN1',
+        'database': 'School',
+        'driver': '{ODBC Driver 17 for SQL Server}',
+        'conectada': False
     },
     'db2': {
-        'nombre': 'School',
-        'server': 'DESKTOP-F3M1EN1',  # Cambia por tu servidor
-        'database': 'School',            # Cambia por el nombre de tu BD
-        'driver': '{ODBC Driver 17 for SQL Server}'
+        'nombre': 'Cliente',
+        'server': 'DESKTOP-F3M1EN1',
+        'database': 'cliente',
+        'driver': '{ODBC Driver 17 for SQL Server}',
+        'conectada': False
     },
     'db3': {
-        'nombre': 'School',
-        'server': 'DESKTOP-F3M1EN1',  # Cambia por tu servidor
-        'database': 'School',            # Cambia por el nombre de tu BD
-        'driver': '{ODBC Driver 17 for SQL Server}'
+        'nombre': 'Archivo',
+        'server': 'DESKTOP-F3M1EN1\\herna',
+        'database': 'School',
+        'driver': '{ODBC Driver 17 for SQL Server}',
+        'conectada': False
     }
 }
 
 conexion_actual = None
+db_actual_key = None
 
 def conectar_sql_server(config):
     try:
-        # Cadena de conexión con autenticación Windows
         conn_str = (
             f"DRIVER={config['driver']};"
             f"SERVER={config['server']};"
@@ -42,7 +46,7 @@ def conectar_sql_server(config):
         )
         
         print(f"🔌 Conectando a: {config['server']} / {config['database']}")
-        conn = pyodbc.connect(conn_str)
+        conn = pyodbc.connect(conn_str, timeout=10)
         print("✅ ¡Conexión exitosa!")
         return conn
     except Exception as e:
@@ -50,12 +54,19 @@ def conectar_sql_server(config):
         return None
 
 def cargar_consultas():
+    """Carga las consultas desde consultas.json con la nueva estructura"""
     if os.path.exists('consultas.json'):
         with open('consultas.json', 'r', encoding='utf-8') as f:
-            return json.load(f)
+            data = json.load(f)
+            # Migrar formato antiguo a nuevo si es necesario
+            for key in data:
+                if isinstance(data[key], str):
+                    data[key] = {"enunciado": "", "sql": data[key]}
+            return data
+    # Inicializar estructura nueva
     consultas = {}
     for i in range(1, 81):
-        consultas[f'query_{i}'] = 'SELECT TOP 10 * FROM sys.tables'
+        consultas[f'query_{i}'] = {"enunciado": "", "sql": "SELECT TOP 10 * FROM sys.tables"}
     return consultas
 
 def guardar_consultas(consultas):
@@ -68,9 +79,8 @@ def index():
 
 @app.route('/conectar', methods=['POST'])
 def conectar():
-    global conexion_actual
+    global conexion_actual, db_actual_key
     
-    # Marcar todas como no conectadas
     for key in DATABASES:
         DATABASES[key]['conectada'] = False
     
@@ -87,9 +97,11 @@ def conectar():
     
     if conexion_actual:
         DATABASES[db_key]['conectada'] = True
+        db_actual_key = db_key
         return jsonify({'exito': True, 'mensaje': f'✅ Conectado a {config["nombre"]}', 'db_key': db_key})
     else:
         return jsonify({'exito': False, 'error': f'❌ Error al conectar a {config["nombre"]}'})
+
 @app.route('/ejecutar', methods=['POST'])
 def ejecutar():
     global conexion_actual
@@ -106,22 +118,10 @@ def ejecutar():
         cursor = conexion_actual.cursor()
         cursor.execute(sql)
         
-        # 🔧 CORRECCIÓN MEJORADA: Detectar cualquier consulta que devuelve datos
         sql_upper = sql.strip().upper()
+        es_select = sql_upper.startswith('SELECT') or sql_upper.startswith('WITH')
         
-        # Palabras que indican que la consulta devuelve datos
-        devuelve_datos = any([
-            sql_upper.startswith('SELECT'),
-            sql_upper.startswith('WITH'),
-            sql_upper.startswith('EXEC'),
-            sql_upper.startswith('EXECUTE'),
-            'RETURN' in sql_upper  # Para procedimientos
-        ])
-        
-        # También verificar si el cursor tiene columnas (más confiable)
-        tiene_columnas = cursor.description is not None
-        
-        if tiene_columnas and devuelve_datos:
+        if es_select and cursor.description:
             encabezados = [desc[0] for desc in cursor.description]
             filas = cursor.fetchall()
             datos = [list(fila) for fila in filas]
@@ -134,16 +134,13 @@ def ejecutar():
                 'mensaje': f'✅ {len(datos)} filas obtenidas'
             })
         else:
-            # Es INSERT, UPDATE, DELETE, etc.
             conexion_actual.commit()
             filas_afectadas = cursor.rowcount
-            
-            # Si rowcount es -1, mostrar mensaje genérico
             if filas_afectadas == -1:
                 return jsonify({
                     'exito': True,
                     'tipo': 'info',
-                    'mensaje': '✅ Consulta ejecutada correctamente (sin filas afectadas)'
+                    'mensaje': '✅ Consulta ejecutada correctamente'
                 })
             else:
                 return jsonify({
@@ -153,14 +150,31 @@ def ejecutar():
                 })
     except Exception as e:
         return jsonify({'exito': False, 'error': f'Error: {str(e)}'})
+
 @app.route('/guardar_consulta', methods=['POST'])
 def guardar_consulta():
     consultas = cargar_consultas()
     idx = request.json.get('idx')
-    sql = request.json.get('sql')
-    consultas[f'query_{idx}'] = sql
+    enunciado = request.json.get('enunciado', '')
+    sql = request.json.get('sql', '')
+    
+    consultas[f'query_{idx}'] = {
+        "enunciado": enunciado,
+        "sql": sql
+    }
     guardar_consultas(consultas)
     return jsonify({'exito': True})
+
+@app.route('/obtener_consulta', methods=['POST'])
+def obtener_consulta():
+    consultas = cargar_consultas()
+    idx = request.json.get('idx')
+    consulta = consultas.get(f'query_{idx}', {"enunciado": "", "sql": ""})
+    return jsonify({'exito': True, 'consulta': consulta})
+
+@app.route('/bd_actual', methods=['GET'])
+def bd_actual():
+    return jsonify({'exito': True, 'db_key': db_actual_key})
 
 if __name__ == '__main__':
     print("🚀 Servidor iniciado en: http://localhost:5000")

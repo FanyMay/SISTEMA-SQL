@@ -1,0 +1,246 @@
+{
+    "query_1": {
+        "enunciado": "Listar todos los cursos",
+        "sql": "SELECT * FROM Course"
+    },
+    "query_2": {
+        "enunciado": "Mostrar todos los estudiantes",
+        "sql": "SELECT * FROM Person WHERE PersonType = 'Student'"
+    },
+    "query_3": {
+        "enunciado": "Instructores registrados",
+        "sql": "SELECT * FROM Person WHERE PersonType = 'Instructor'"
+    },
+    "query_4": {
+        "enunciado": "Cursos con créditos mayores a 3",
+        "sql": "SELECT * FROM Course WHERE Credits > 3"
+    },
+    "query_5": {
+        "enunciado": "Calificaciones de estudiantes",
+        "sql": "SELECT sg.StudentID, p.LastName, p.FirstName, sg.Grade FROM StudentGrade sg JOIN Person p ON sg.StudentID = p.PersonID"
+    },
+    "query_6": {
+        "enunciado": "Cursos presenciales (Onsite)",
+        "sql": "SELECT c.CourseID, c.Title, oc.Location, oc.Days FROM Course c INNER JOIN OnsiteCourse oc ON c.CourseID = oc.CourseID"
+    },
+    "query_7": {
+        "enunciado": "Cursos en línea (Online)",
+        "sql": "SELECT c.CourseID, c.Title, oc.URL FROM Course c INNER JOIN OnlineCourse oc ON c.CourseID = oc.CourseID"
+    },
+    "query_8": {
+        "enunciado": "Estudiantes y sus calificaciones promedio",
+        "sql": "SELECT p.PersonID, p.LastName, p.FirstName, AVG(CAST(sg.Grade AS FLOAT)) AS Promedio FROM Person p JOIN StudentGrade sg ON p.PersonID = sg.StudentID GROUP BY p.PersonID, p.LastName, p.FirstName"
+    },
+    "query_9": {
+        "enunciado": "Cursos sin estudiantes asignados",
+        "sql": "SELECT c.CourseID, c.Title FROM Course c WHERE c.CourseID NOT IN (SELECT DISTINCT CourseID FROM StudentGrade)"
+    },
+    "query_10": {
+        "enunciado": "Instructores que imparten más de un curso",
+        "sql": "SELECT p.PersonID, p.LastName, p.FirstName, COUNT(ci.CourseID) AS CursosImpartidos FROM Person p JOIN CourseInstructor ci ON p.PersonID = ci.PersonID GROUP BY p.PersonID, p.LastName, p.FirstName HAVING COUNT(ci.CourseID) > 1"
+    },
+    "query_11": {
+        "enunciado": "Top 5 cursos con más estudiantes",
+        "sql": "SELECT TOP 5 c.CourseID, c.Title, COUNT(sg.StudentID) AS TotalEstudiantes FROM Course c JOIN StudentGrade sg ON c.CourseID = sg.CourseID GROUP BY c.CourseID, c.Title ORDER BY TotalEstudiantes DESC"
+    },
+    "query_12": {
+        "enunciado": "Estudiantes sin calificaciones",
+        "sql": "SELECT p.PersonID, p.LastName, p.FirstName FROM Person p WHERE p.PersonType = 'Student' AND p.PersonID NOT IN (SELECT DISTINCT StudentID FROM StudentGrade)"
+    },
+    "query_13": {
+        "enunciado": "Departamentos y sus cursos",
+        "sql": "SELECT d.Name AS Departamento, c.Title AS Curso FROM Department d JOIN Course c ON d.DepartmentID = c.DepartmentID"
+    },
+    "query_14": {
+        "enunciado": "Calificaciones por curso ordenadas",
+        "sql": "SELECT c.Title, p.LastName, p.FirstName, sg.Grade FROM Course c JOIN StudentGrade sg ON c.CourseID = sg.CourseID JOIN Person p ON sg.StudentID = p.PersonID ORDER BY c.Title, sg.Grade DESC"
+    },
+    "query_15": {
+        "enunciado": "Resumen de cursos por departamento",
+        "sql": "SELECT d.Name AS Departamento, COUNT(c.CourseID) AS TotalCursos FROM Department d LEFT JOIN Course c ON d.DepartmentID = c.DepartmentID GROUP BY d.Name ORDER BY TotalCursos DESC"
+    },
+    "query_16": {
+        "enunciado": "Genera una lista de las ciudades con establecimientos donde se venden programas, sin que aparezcan valores duplicados",
+        "sql": "\tSELECT c.ciudad\nFROM Comercio c \nWHERE EXISTS (SELECT 1 FROM distribuye d WHERE d.cif = c.cif)\n"
+    },
+    "query_17": {
+        "enunciado": "Créditos totales por estudiante",
+        "sql": "SELECT p.LastName, p.FirstName, SUM(c.Credits) AS CreditosTotales FROM Person p JOIN StudentGrade sg ON p.PersonID = sg.StudentID JOIN Course c ON sg.CourseID = c.CourseID GROUP BY p.PersonID, p.LastName, p.FirstName ORDER BY CreditosTotales DESC"
+    },
+    "query_18": {
+        "enunciado": "Cursos con URL (Online)",
+        "sql": "SELECT c.Title, oc.URL FROM Course c JOIN OnlineCourse oc ON c.CourseID = oc.CourseID WHERE oc.URL IS NOT NULL"
+    },
+    "query_19": {
+        "enunciado": "Distribución de calificaciones",
+        "sql": "SELECT Grade, COUNT(*) AS Cantidad FROM StudentGrade GROUP BY Grade ORDER BY Grade"
+    },
+    "query_20": {
+        "enunciado": "Estudiantes con promedio mayor a 85",
+        "sql": "SELECT p.LastName, p.FirstName, AVG(CAST(sg.Grade AS FLOAT)) AS Promedio FROM Person p JOIN StudentGrade sg ON p.PersonID = sg.StudentID GROUP BY p.PersonID, p.LastName, p.FirstName HAVING AVG(CAST(sg.Grade AS FLOAT)) > 85 ORDER BY Promedio DESC"
+    },
+    "query_21": {
+        "enunciado": "Cursos que no tienen instructor asignado",
+        "sql": "SELECT c.CourseID, c.Title FROM Course c WHERE c.CourseID NOT IN (SELECT DISTINCT CourseID FROM CourseInstructor)"
+    },
+    "query_22": {
+        "enunciado": "Instructores y sus cursos (detalle)",
+        "sql": "SELECT p.LastName AS Instructor, c.Title AS Curso, d.Name AS Departamento FROM Person p JOIN CourseInstructor ci ON p.PersonID = ci.PersonID JOIN Course c ON ci.CourseID = c.CourseID JOIN Department d ON c.DepartmentID = d.DepartmentID ORDER BY p.LastName"
+    },
+    "query_23": {
+        "enunciado": "Ubicaciones de cursos presenciales",
+        "sql": "SELECT DISTINCT Location, COUNT(CourseID) AS CantidadCursos FROM OnsiteCourse GROUP BY Location ORDER BY CantidadCursos DESC"
+    },
+    "query_24": {
+        "enunciado": "Estudiantes por departamento de cursos",
+        "sql": "SELECT d.Name AS Departamento, COUNT(DISTINCT sg.StudentID) AS TotalEstudiantes FROM Department d JOIN Course c ON d.DepartmentID = c.DepartmentID JOIN StudentGrade sg ON c.CourseID = sg.CourseID GROUP BY d.Name ORDER BY TotalEstudiantes DESC"
+    },
+    "query_25": {
+        "enunciado": "Consulta CTE: Cursos con estudiantes",
+        "sql": "WITH CursosConEstudiantes AS (SELECT c.CourseID, c.Title, COUNT(sg.StudentID) AS TotalEstudiantes FROM Course c LEFT JOIN StudentGrade sg ON c.CourseID = sg.CourseID GROUP BY c.CourseID, c.Title) SELECT * FROM CursosConEstudiantes WHERE TotalEstudiantes > 0 ORDER BY TotalEstudiantes DESC"
+    },
+    "query_26": {
+        "enunciado": "Consulta CTE: Promedio por estudiante",
+        "sql": "WITH PromedioEstudiante AS (SELECT StudentID, AVG(CAST(Grade AS FLOAT)) AS Promedio FROM StudentGrade GROUP BY StudentID) SELECT p.LastName, p.FirstName, pe.Promedio FROM Person p JOIN PromedioEstudiante pe ON p.PersonID = pe.StudentID WHERE pe.Promedio > 80 ORDER BY pe.Promedio DESC"
+    },
+    "query_27": {
+        "enunciado": "Consulta CTE: Cursos populares",
+        "sql": "WITH PopularidadCursos AS (SELECT c.CourseID, c.Title, COUNT(sg.StudentID) AS Inscritos FROM Course c LEFT JOIN StudentGrade sg ON c.CourseID = sg.CourseID GROUP BY c.CourseID, c.Title) SELECT * FROM PopularidadCursos WHERE Inscritos > 5 ORDER BY Inscritos DESC"
+    },
+    "query_28": {
+        "enunciado": "Consulta CTE: Instructores múltiples cursos",
+        "sql": "WITH InstructoresMultiples AS (SELECT ci.PersonID, COUNT(ci.CourseID) AS TotalCursos FROM CourseInstructor ci GROUP BY ci.PersonID HAVING COUNT(ci.CourseID) > 1) SELECT p.LastName, p.FirstName, im.TotalCursos FROM Person p JOIN InstructoresMultiples im ON p.PersonID = im.PersonID ORDER BY im.TotalCursos DESC"
+    },
+    "query_29": {
+        "enunciado": "Estudiantes con más de 3 cursos",
+        "sql": "SELECT p.PersonID, p.LastName, p.FirstName, COUNT(sg.CourseID) AS CursosTomados FROM Person p JOIN StudentGrade sg ON p.PersonID = sg.StudentID GROUP BY p.PersonID, p.LastName, p.FirstName HAVING COUNT(sg.CourseID) > 3 ORDER BY CursosTomados DESC"
+    },
+    "query_30": {
+        "enunciado": "Rango de calificaciones por curso",
+        "sql": "SELECT c.Title, MIN(CAST(sg.Grade AS FLOAT)) AS CalificacionMin, MAX(CAST(sg.Grade AS FLOAT)) AS CalificacionMax, AVG(CAST(sg.Grade AS FLOAT)) AS CalificacionProm FROM Course c JOIN StudentGrade sg ON c.CourseID = sg.CourseID GROUP BY c.CourseID, c.Title ORDER BY CalificacionProm DESC"
+    },
+    "query_31": {
+        "enunciado": "Cursos presenciales con horario específico",
+        "sql": "SELECT c.Title, oc.Days, oc.Location FROM Course c INNER JOIN OnsiteCourse oc ON c.CourseID = oc.CourseID WHERE oc.Days LIKE '%M%' ORDER BY oc.Days"
+    },
+    "query_32": {
+        "enunciado": "Total de estudiantes por curso",
+        "sql": "SELECT c.CourseID, c.Title, COUNT(sg.StudentID) AS TotalEstudiantes FROM Course c LEFT JOIN StudentGrade sg ON c.CourseID = sg.CourseID GROUP BY c.CourseID, c.Title ORDER BY TotalEstudiantes DESC"
+    },
+    "query_33": {
+        "enunciado": "Detalle completo de calificaciones con nombres",
+        "sql": "SELECT c.Title AS Curso, p.LastName AS Apellido, p.FirstName AS Nombre, sg.Grade AS Calificacion FROM Course c JOIN StudentGrade sg ON c.CourseID = sg.CourseID JOIN Person p ON sg.StudentID = p.PersonID ORDER BY c.Title, p.LastName"
+    },
+    "query_34": {
+        "enunciado": "Cursos sin horario definido (Online)",
+        "sql": "SELECT c.Title, oc.URL FROM Course c JOIN OnlineCourse oc ON c.CourseID = oc.CourseID"
+    },
+    "query_35": {
+        "enunciado": "Estadísticas por tipo de curso",
+        "sql": "SELECT 'Onsite' AS TipoCurso, COUNT(*) AS Total FROM OnsiteCourse UNION SELECT 'Online' AS TipoCurso, COUNT(*) AS Total FROM OnlineCourse"
+    },
+    "query_36": {
+        "enunciado": "Instructores y carga académica",
+        "sql": "SELECT p.LastName, p.FirstName, COUNT(ci.CourseID) AS CursosQueImparte FROM Person p LEFT JOIN CourseInstructor ci ON p.PersonID = ci.PersonID WHERE p.PersonType = 'Instructor' GROUP BY p.PersonID, p.LastName, p.FirstName ORDER BY CursosQueImparte DESC"
+    },
+    "query_37": {
+        "enunciado": "Consulta compleja: Cursos, estudiantes e instructores",
+        "sql": "WITH Cursos AS (SELECT c.CourseID, c.Title FROM Course c), AlumnosPorCurso AS (SELECT sg.CourseID, sg.StudentID, p.LastName + ', ' + p.FirstName AS Estudiante FROM StudentGrade sg JOIN Person p ON sg.StudentID = p.PersonID), InstructoresPorCurso AS (SELECT ci.CourseID, p.LastName + ', ' + p.FirstName AS Instructor FROM CourseInstructor ci JOIN Person p ON ci.PersonID = p.PersonID) SELECT cu.CourseID, cu.Title, a.Estudiante, i.Instructor FROM Cursos cu LEFT JOIN AlumnosPorCurso a ON cu.CourseID = a.CourseID LEFT JOIN InstructoresPorCurso i ON cu.CourseID = i.CourseID ORDER BY cu.Title, a.Estudiante"
+    },
+    "query_38": {
+        "enunciado": "Top 10 estudiantes con mejores promedios",
+        "sql": "SELECT TOP 10 p.LastName, p.FirstName, AVG(CAST(sg.Grade AS FLOAT)) AS Promedio FROM Person p JOIN StudentGrade sg ON p.PersonID = sg.StudentID GROUP BY p.PersonID, p.LastName, p.FirstName ORDER BY Promedio DESC"
+    },
+    "query_39": {
+        "enunciado": "Días con más cursos presenciales",
+        "sql": "SELECT Days, COUNT(*) AS CantidadCursos FROM OnsiteCourse GROUP BY Days ORDER BY CantidadCursos DESC"
+    },
+    "query_40": {
+        "enunciado": "Estudiantes sin instructor visible",
+        "sql": "SELECT DISTINCT p.PersonID, p.LastName, p.FirstName FROM Person p JOIN StudentGrade sg ON p.PersonID = sg.StudentID WHERE sg.CourseID NOT IN (SELECT DISTINCT CourseID FROM CourseInstructor)"
+    },
+    "query_41": {
+        "enunciado": "Cursos con alta demanda (>10 estudiantes)",
+        "sql": "SELECT c.CourseID, c.Title, COUNT(sg.StudentID) AS Demanda FROM Course c JOIN StudentGrade sg ON c.CourseID = sg.CourseID GROUP BY c.CourseID, c.Title HAVING COUNT(sg.StudentID) > 10 ORDER BY Demanda DESC"
+    },
+    "query_42": {
+        "enunciado": "Matrícula por departamento",
+        "sql": "SELECT d.Name AS Departamento, COUNT(sg.StudentID) AS TotalMatriculas FROM Department d JOIN Course c ON d.DepartmentID = c.DepartmentID JOIN StudentGrade sg ON c.CourseID = sg.CourseID GROUP BY d.Name ORDER BY TotalMatriculas DESC"
+    },
+    "query_43": {
+        "enunciado": "Cursos que no son ni Onsite ni Online",
+        "sql": "SELECT c.CourseID, c.Title FROM Course c WHERE c.CourseID NOT IN (SELECT CourseID FROM OnsiteCourse) AND c.CourseID NOT IN (SELECT CourseID FROM OnlineCourse)"
+    },
+    "query_44": {
+        "enunciado": "Eficiencia de instructores (promedio calificaciones)",
+        "sql": "SELECT p.LastName, p.FirstName, AVG(CAST(sg.Grade AS FLOAT)) AS PromedioCalificaciones FROM Person p JOIN CourseInstructor ci ON p.PersonID = ci.PersonID JOIN StudentGrade sg ON ci.CourseID = sg.CourseID GROUP BY p.PersonID, p.LastName, p.FirstName ORDER BY PromedioCalificaciones DESC"
+    },
+    "query_45": {
+        "enunciado": "Listado de ubicaciones únicas",
+        "sql": "SELECT DISTINCT Location FROM OnsiteCourse WHERE Location IS NOT NULL ORDER BY Location"
+    },
+    "query_46": {
+        "enunciado": "JSON: Cursos con estudiantes (SQL Server)",
+        "sql": "SELECT c.CourseID, c.Title, (SELECT sg.StudentID, p.LastName FROM StudentGrade sg JOIN Person p ON sg.StudentID = p.PersonID WHERE sg.CourseID = c.CourseID FOR JSON AUTO) AS Estudiantes FROM Course c FOR JSON AUTO"
+    },
+    "query_47": {
+        "enunciado": "XML: Cursos con estudiantes",
+        "sql": "SELECT c.CourseID, c.Title, (SELECT sg.StudentID, p.LastName FROM StudentGrade sg JOIN Person p ON sg.StudentID = p.PersonID WHERE sg.CourseID = c.CourseID FOR XML AUTO) AS Estudiantes FROM Course c FOR XML AUTO"
+    },
+    "query_48": {
+        "enunciado": "Validación: Cursos con créditos incorrectos",
+        "sql": "SELECT CourseID, Title, Credits FROM Course WHERE Credits <= 0 OR Credits IS NULL"
+    },
+    "query_49": {
+        "enunciado": "Backup de calificaciones (consulta de respaldo)",
+        "sql": "SELECT * INTO StudentGrade_Backup FROM StudentGrade WHERE 1=0"
+    },
+    "query_50": {
+        "enunciado": "Consulta de auditoría: Calificaciones modificadas recientemente",
+        "sql": "SELECT * FROM StudentGrade WHERE ModifiedDate >= DATEADD(DAY, -7, GETDATE())"
+    },
+    "query_51": {
+        "enunciado": "Estudiantes por rango de edad",
+        "sql": "SELECT CASE WHEN YEAR(GETDATE()) - YEAR(BirthDate) < 20 THEN 'Menos de 20' WHEN YEAR(GETDATE()) - YEAR(BirthDate) BETWEEN 20 AND 25 THEN '20-25' ELSE 'Más de 25' END AS RangoEdad, COUNT(*) AS Cantidad FROM Person WHERE PersonType = 'Student' GROUP BY CASE WHEN YEAR(GETDATE()) - YEAR(BirthDate) < 20 THEN 'Menos de 20' WHEN YEAR(GETDATE()) - YEAR(BirthDate) BETWEEN 20 AND 25 THEN '20-25' ELSE 'Más de 25' END"
+    },
+    "query_52": {
+        "enunciado": "Cursos agrupados por rango de créditos",
+        "sql": "SELECT CASE WHEN Credits <= 2 THEN 'Créditos Bajos' WHEN Credits BETWEEN 3 AND 4 THEN 'Créditos Medios' ELSE 'Créditos Altos' END AS RangoCreditos, COUNT(*) AS CantidadCursos FROM Course GROUP BY CASE WHEN Credits <= 2 THEN 'Créditos Bajos' WHEN Credits BETWEEN 3 AND 4 THEN 'Créditos Medios' ELSE 'Créditos Altos' END"
+    },
+    "query_53": {
+        "enunciado": "Pivot: Estudiantes por curso",
+        "sql": "SELECT * FROM (SELECT c.Title, p.LastName FROM Course c JOIN StudentGrade sg ON c.CourseID = sg.CourseID JOIN Person p ON sg.StudentID = p.PersonID) AS SourceTable PIVOT (COUNT(LastName) FOR Title IN ([Matemáticas], [Historia], [Literatura])) AS PivotTable"
+    },
+    "query_54": {
+        "enunciado": "ROW_NUMBER: Ranking de estudiantes por promedio",
+        "sql": "SELECT p.LastName, p.FirstName, AVG(CAST(sg.Grade AS FLOAT)) AS Promedio, ROW_NUMBER() OVER (ORDER BY AVG(CAST(sg.Grade AS FLOAT)) DESC) AS Ranking FROM Person p JOIN StudentGrade sg ON p.PersonID = sg.StudentID GROUP BY p.PersonID, p.LastName, p.FirstName"
+    },
+    "query_55": {
+        "enunciado": "LAG: Comparativa de calificaciones (curso anterior)",
+        "sql": "SELECT sg.StudentID, sg.CourseID, sg.Grade, LAG(sg.Grade) OVER (PARTITION BY sg.StudentID ORDER BY sg.CourseID) AS CalificacionAnterior FROM StudentGrade sg"
+    },
+    "query_56": {
+        "enunciado": "Recursive CTE: Jerarquía de departamentos (si existe)",
+        "sql": "WITH Jerarquia AS (SELECT DepartmentID, Name, ParentDepartmentID FROM Department WHERE ParentDepartmentID IS NULL UNION ALL SELECT d.DepartmentID, d.Name, d.ParentDepartmentID FROM Department d INNER JOIN Jerarquia j ON d.ParentDepartmentID = j.DepartmentID) SELECT * FROM Jerarquia"
+    },
+    "query_57": {
+        "enunciado": "Datos duplicados en calificaciones",
+        "sql": "SELECT StudentID, CourseID, COUNT(*) AS Duplicados FROM StudentGrade GROUP BY StudentID, CourseID HAVING COUNT(*) > 1"
+    },
+    "query_58": {
+        "enunciado": "Correlación entre créditos y calificaciones",
+        "sql": "SELECT c.Credits, AVG(CAST(sg.Grade AS FLOAT)) AS PromedioCalificacion FROM Course c JOIN StudentGrade sg ON c.CourseID = sg.CourseID GROUP BY c.Credits ORDER BY c.Credits"
+    },
+    "query_59": {
+        "enunciado": "Materias con mejor rendimiento (promedio > 90)",
+        "sql": "SELECT c.Title, AVG(CAST(sg.Grade AS FLOAT)) AS Promedio FROM Course c JOIN StudentGrade sg ON c.CourseID = sg.CourseID GROUP BY c.CourseID, c.Title HAVING AVG(CAST(sg.Grade AS FLOAT)) > 90 ORDER BY Promedio DESC"
+    },
+    "query_60": {
+        "enunciado": "Conteo total de entidades",
+        "sql": "SELECT 'Personas' AS Entidad, COUNT(*) AS Total FROM Person UNION SELECT 'Cursos' AS Entidad, COUNT(*) AS Total FROM Course UNION SELECT 'Calificaciones' AS Entidad, COUNT(*) AS Total FROM StudentGrade UNION SELECT 'Departamentos' AS Entidad, COUNT(*) AS Total FROM Department"
+    },
+    "query_61": {
+        "enunciado": "Resumen ejecutivo del sistema",
+        "sql": "SELECT (SELECT COUNT(*) FROM Person WHERE PersonType = 'Student') AS TotalEstudiantes, (SELECT COUNT(*) FROM Person WHERE PersonType = 'Instructor') AS TotalInstructores, (SELECT COUNT(*) FROM Course) AS TotalCursos, (SELECT COUNT(*) FROM StudentGrade) AS TotalCalificaciones, (SELECT AVG(CAST(Grade AS FLOAT)) FROM StudentGrade) AS PromedioGeneral"
+    }
+}

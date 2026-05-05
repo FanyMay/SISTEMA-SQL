@@ -355,3 +355,183 @@ body {
 .result-info {
     font-size: 12px;
 }
+
+/* Agregar estos estilos al final del archivo */
+
+.query-enunciado {
+    background: #e8f0fe;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #1a3a4f;
+    margin: 10px 0;
+    border-left: 3px solid #2c6e9e;
+    font-weight: 500;
+}
+
+.empty-enunciado {
+    color: #9bb7d4;
+    font-style: italic;
+    font-weight: normal;
+}
+
+.edit-panel {
+    margin-top: 10px;
+}
+
+.query-enunciado-input, .query-sql-input {
+    width: 100%;
+    font-family: monospace;
+    font-size: 12px;
+    padding: 8px;
+    border: 1px solid #2c6e9e;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    resize: vertical;
+}
+
+.query-enunciado-input {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 13px;
+    min-height: 50px;
+}
+
+.query-sql-input {
+    min-height: 100px;
+}
+
+
+/* Estilos para pestañas */
+.editor-tabs {
+    display: flex;
+    background: #f0f4f8;
+    border-bottom: 1px solid #d4dee5;
+    padding: 0 15px;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    color: #6b8cae;
+    transition: all 0.2s ease;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+}
+
+.tab-btn:hover {
+    color: #2c6e9e;
+}
+
+.tab-btn.active {
+    color: #2c6e9e;
+    border-bottom-color: #2c6e9e;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Estilos para el enunciado */
+.enunciado-container {
+    padding: 15px;
+}
+
+.enunciado-actual {
+    background: #e8f0fe;
+    border-left: 4px solid #2c6e9e;
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.enunciado-label {
+    font-weight: 600;
+    color: #1a3a4f;
+    display: block;
+    margin-bottom: 5px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.enunciado-texto {
+    color: #2c6e9e;
+    font-size: 14px;
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+.sin-enunciado {
+    color: #9bb7d4;
+    font-style: italic;
+    font-weight: normal;
+}
+
+.enunciado-editor {
+    width: 100%;
+    min-height: 150px;
+    padding: 12px;
+    font-family: 'Segoe UI', 'Roboto', sans-serif;
+    font-size: 14px;
+    border: 1px solid #cbd7e4;
+    border-radius: 8px;
+    resize: vertical;
+    margin-bottom: 12px;
+}
+
+.enunciado-editor:focus {
+    outline: none;
+    border-color: #2c6e9e;
+    box-shadow: 0 0 0 2px rgba(44, 110, 158, 0.1);
+}
+
+.enunciado-actions {
+    text-align: right;
+}
+
+.btn-secondary-small {
+    background: #eef2f7;
+    color: #2c6e9e;
+    border: 1px solid #cbd7e4;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary-small:hover {
+    background: #e3eaf1;
+    border-color: #2c6e9e;
+}
+
+/* Botón de limpiar - Rojo elegante */
+.btn-danger {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+}
+
+.btn-danger:active {
+    transform: translateY(0);
+}
