@@ -1,246 +1,246 @@
 {
     "query_1": {
-        "enunciado": "Listar todos los cursos",
-        "sql": "SELECT * FROM Course"
+        "enunciado": "Dar un listado de los instructores (código, nombre y apellido y el nombre del departamento en que trabajan. Ordenados Por el año de ingreso en forma descendente.",
+        "sql": "SELECT pr.PersonID , pr.FirstName + ' ' + pr.LastName AS NombreCompleto, dp.Name,\npr.HireDate\nFROM Course cr\nINNER JOIN CourseInstructor ci ON ci.CourseID = cr.CourseID\nINNER JOIN Person pr ON pr.PersonID = ci.PersonID\nINNER JOIN Department dp ON dp.DepartmentID = cr.DepartmentID\nORDER BY pr.HireDate desc;"
     },
     "query_2": {
-        "enunciado": "Mostrar todos los estudiantes",
-        "sql": "SELECT * FROM Person WHERE PersonType = 'Student'"
+        "enunciado": "Dar un Listado código de curso, nombre de curso y nombre del departamento al que pertenece ese curso.",
+        "sql": "SELECT cr.CourseID, cr.Title,dp.Name\nFROM Course cr\nINNER JOIN Department dp ON dp.DepartmentID = cr.DepartmentID"
     },
     "query_3": {
-        "enunciado": "Instructores registrados",
-        "sql": "SELECT * FROM Person WHERE PersonType = 'Instructor'"
+        "enunciado": "Cuantos alumnos hay por cada curso que se imparte, agrupado por departamento y nombre del curso",
+        "sql": "SELECT cr.CourseID, cr.Title,dp.Name, COUNT(st.StudentID) AS TotalAlumnos\nFROM Course cr\nINNER JOIN StudentGrade st ON st.CourseID = cr.CourseID\nINNER JOIN Department dp ON dp.DepartmentID = cr.DepartmentID\nGROUP BY cr.Title,dp.Name,cr.CourseID"
     },
     "query_4": {
-        "enunciado": "Cursos con créditos mayores a 3",
-        "sql": "SELECT * FROM Course WHERE Credits > 3"
+        "enunciado": "Mostrar el numero de alumnos que ingresaron por año.",
+        "sql": "SELECT pr.EnrollmentDate , COUNT (pr.PersonID) AS totalAlumnos\nFROM Person pr\nWHERE pr.EnrollmentDate IS NOT NULL\nGROUP BY pr.EnrollmentDate"
     },
     "query_5": {
-        "enunciado": "Calificaciones de estudiantes",
-        "sql": "SELECT sg.StudentID, p.LastName, p.FirstName, sg.Grade FROM StudentGrade sg JOIN Person p ON sg.StudentID = p.PersonID"
+        "enunciado": "Mostrar el nombre del alumno, el nombre del instructor, el nombre del curso que se está impartiendo en línea.",
+        "sql": "WITH Cursos AS (\n SELECT c.CourseID,c.Title\nFROM Course c\nWHERE c.CourseID IN (\nSELECT oc.CourseID FROM OnlineCourse oc\n)\n),\nAlumnosPorCursos AS (\n SELECT\n sg.CourseID,\n sg.StudentID,\n pr.FirstName + ' ' + pr.LastName AS NombreCompleto\n FROM StudentGrade sg\n INNER JOIN Person pr ON pr.PersonID = sg.StudentID\n),\nInstructorPorCurso AS (\n SELECT\n ci.CourseID,\n p.PersonID,\n p.FirstName + ' ' + p.LastName AS InstructorNombre\n FROM CourseInstructor ci\n INNER JOIN Person p ON p.PersonID = ci.PersonID\n)\nSELECT\n c.CourseID,\n c.Title AS Curso,\n a.NombreCompleto AS Estudiante,\n i.InstructorNombre AS Instructor\nFROM Cursos c\nINNER JOIN AlumnosPorCursos a\n ON c.CourseID = a.CourseID\nLEFT JOIN InstructorPorCurso i\n ON c.CourseID = i.CourseID\nORDER BY c.CourseID, a.NombreCompleto;"
     },
     "query_6": {
-        "enunciado": "Cursos presenciales (Onsite)",
-        "sql": "SELECT c.CourseID, c.Title, oc.Location, oc.Days FROM Course c INNER JOIN OnsiteCourse oc ON c.CourseID = oc.CourseID"
+        "enunciado": "Mostrar el nombre del curso que se está impartiendo los Lunes(M) o Viernes (F). Utilice subconsulta. Tabla OnSiteCourse",
+        "sql": "SELECT Title\nFROM Course c\nWHERE c.CourseID IN(\nSELECT oc.CourseID\nFrom OnsiteCourse oc\nWHERE Days LIKE '%M%' OR Days LIKE '%F%'\n)"
     },
     "query_7": {
-        "enunciado": "Cursos en línea (Online)",
-        "sql": "SELECT c.CourseID, c.Title, oc.URL FROM Course c INNER JOIN OnlineCourse oc ON c.CourseID = oc.CourseID"
+        "enunciado": "Elabore un reporte que muestre cuántos alumnos hay ingresado por año, en forma descendente y a la vez de el total de alumnos.",
+        "sql": "SELECT\n YEAR(pr.EnrollmentDate) AS AñoDeIngreso,\n COUNT (pr.PersonID) AS TotalPorAño,\n (SELECT COUNT(*)\n FROM Person\n WHERE EnrollmentDate IS NOT NULL) AS TotalGlobal\nFROM Person pr\nWHERE pr.EnrollmentDate IS NOT NULL\nGROUP BY YEAR(pr.EnrollmentDate)\nORDER BY AñoDeIngreso DESC;"
     },
     "query_8": {
-        "enunciado": "Estudiantes y sus calificaciones promedio",
-        "sql": "SELECT p.PersonID, p.LastName, p.FirstName, AVG(CAST(sg.Grade AS FLOAT)) AS Promedio FROM Person p JOIN StudentGrade sg ON p.PersonID = sg.StudentID GROUP BY p.PersonID, p.LastName, p.FirstName"
+        "enunciado": "Elabore un reporte que me de el nombre del departamento, el numero de instructores, el numero de alumnos y el presupuesto de ese departamento (Budget). Utilice una subconsulta del lado del select.",
+        "sql": "SELECT\n d.DepartmentID,\n d.Name,\n (SELECT COUNT(DISTINCT ci.PersonID)\n FROM CourseInstructor ci \n WHERE ci.CourseID IN (\n SELECT c.CourseID \n FROM Course c \n WHERE c.DepartmentID = d.DepartmentID\n )\n ) AS Instructores,\n (SELECT COUNT(DISTINCT sg.StudentID)\n FROM StudentGrade sg \n WHERE sg.CourseID IN (\n SELECT c.CourseID \n FROM Course c \n WHERE c.DepartmentID = d.DepartmentID\n )\n ) AS Estudiantes,\n d.Budget\nFROM Department d;"
     },
     "query_9": {
-        "enunciado": "Cursos sin estudiantes asignados",
-        "sql": "SELECT c.CourseID, c.Title FROM Course c WHERE c.CourseID NOT IN (SELECT DISTINCT CourseID FROM StudentGrade)"
+        "enunciado": "Elabore un procedimiento que me permita ingresar datos a la tabla Person, teniendo en cuenta que si es Instructor(Instructor) debe llenar el campo fecha de ingreso(hiredate), con la fecha actual y si es Estudiante(Student) debe llenar con la fecha actual (EnrollmentDate).",
+        "sql": "CREATE PROCEDURE InsertarPersona\n @FirstName NVARCHAR(50),\n @LastName NVARCHAR(50),\n @Discriminator NVARCHAR(50) -- 'Instructor' o 'Student'\nAS\nBEGIN\n SET NOCOUNT ON;\n IF @Discriminator = 'Instructor'\n BEGIN\n INSERT INTO Person (FirstName, LastName, Discriminator, HireDate)\n VALUES (@FirstName, @LastName, @Discriminator, GETDATE());\n END\n ELSE IF @Discriminator = 'Student'\n BEGIN\n INSERT INTO Person (FirstName, LastName, Discriminator, EnrollmentDate)\n VALUES (@FirstName, @LastName, @Discriminator, GETDATE());\n END\n ELSE\n BEGIN\n RAISERROR('El tipo de persona debe ser Instructor o Student', 16, 1);\n END\nEND;\nGO\n-- Para probar:\nEXEC InsertarPersona 'Gerson', 'Hernadez', 'Student';"
     },
     "query_10": {
-        "enunciado": "Instructores que imparten más de un curso",
-        "sql": "SELECT p.PersonID, p.LastName, p.FirstName, COUNT(ci.CourseID) AS CursosImpartidos FROM Person p JOIN CourseInstructor ci ON p.PersonID = ci.PersonID GROUP BY p.PersonID, p.LastName, p.FirstName HAVING COUNT(ci.CourseID) > 1"
+        "enunciado": "Construya una consulta que me de todos los datos de la tabla Course y agregue una nueva columna (tipo) en esta nueva columna, se deberá poner los siguientes mensajes, si tiene 4 créditos me diga 'Elevado', si tiene 3 créditos me diga 'medio', y si tiene 2 creditos diga 'bajo'; solo para departamento de ingeniería; para otro departamento debe poner el valor NULL.",
+        "sql": "SELECT Title,DepartmentID, Credits,\nCASE\nWHEN DepartmentID = 1 AND Credits = 4 THEN 'Elevado'\n WHEN DepartmentID = 1 AND Credits = 3 THEN 'Medio'\n WHEN DepartmentID = 1 AND Credits = 2 THEN 'Bajo'\n ELSE NULL\nEND AS Tipo\nFROM Course\nORDER BY 3;"
     },
     "query_11": {
-        "enunciado": "Top 5 cursos con más estudiantes",
-        "sql": "SELECT TOP 5 c.CourseID, c.Title, COUNT(sg.StudentID) AS TotalEstudiantes FROM Course c JOIN StudentGrade sg ON c.CourseID = sg.CourseID GROUP BY c.CourseID, c.Title ORDER BY TotalEstudiantes DESC"
+        "enunciado": "Construya un Disparador para la tabla Person, de tal forma que, si se utiliza el procedimiento del literal 9, debe enviar un mensaje que diga 'registro ingresado correctamente'.",
+        "sql": "CREATE TRIGGER trg_MensajeInsercino\nON Person\nAFTER INSERT\nAS\nBEGIN\n PRINT 'Registro ingresado correctamente'\nEND;"
     },
     "query_12": {
-        "enunciado": "Estudiantes sin calificaciones",
-        "sql": "SELECT p.PersonID, p.LastName, p.FirstName FROM Person p WHERE p.PersonType = 'Student' AND p.PersonID NOT IN (SELECT DISTINCT StudentID FROM StudentGrade)"
+        "enunciado": "Construya una vista, que me muestre todos los datos de los alumnos, con sus respectivas materias. Que tengan mas de 10 años de haber ingresado a estudiar.",
+        "sql": "CREATE VIEW AlumnosMas10Anyos\nAS\nSELECT p.PersonID,p.FirstName,p.LastName,p.EnrollmentDate,p.Discriminator,(\n SELECT STRING_AGG(c.Title,',') FROM Course c \n JOIN StudentGrade sg on c.CourseID=sg.CourseID\n WHERE sg.StudentID=p.PersonID\n) as Cursos\nFROM Person p \nWHERE YEAR(p.EnrollmentDate) < DATEADD(YEAR,-10,GETDATE())"
     },
     "query_13": {
-        "enunciado": "Departamentos y sus cursos",
-        "sql": "SELECT d.Name AS Departamento, c.Title AS Curso FROM Department d JOIN Course c ON d.DepartmentID = c.DepartmentID"
+        "enunciado": "Elabore una consulta que me muestre el código del instructor, su location (OfficeAsigment), nombre del instructor, de aquellos que no imparten Cursos en línea, unido con los que imparten cursos presenciales. Utilice subconsultas.",
+        "sql": "SELECT p.PersonID,p.FirstName + ' ' + p.LastName AS Nombre,\n(\n SELECT oa.Location FROM OfficeAssignment oa WHERE oa.InstructorID = p.PersonID\n) as Location\nFROM Person p\nINNER JOIN CourseInstructor ci ON ci.PersonID=p.PersonID\nWHERE NOT EXISTS(\n SELECT oc.CourseID FROM OnlineCourse oc WHERE ci.CourseID=oc.CourseID\n)\n\nSELECT * FROM OnlineCourse oc Inner JOIN Course c ON oc.CourseID=c.CourseID\nINNER JOIN CourseInstructor ci ON ci.CourseID=c.CourseID"
     },
     "query_14": {
-        "enunciado": "Calificaciones por curso ordenadas",
-        "sql": "SELECT c.Title, p.LastName, p.FirstName, sg.Grade FROM Course c JOIN StudentGrade sg ON c.CourseID = sg.CourseID JOIN Person p ON sg.StudentID = p.PersonID ORDER BY c.Title, sg.Grade DESC"
+        "enunciado": "Liste los cursos que tienen 4 créditos, el total de alumnos que tienen esos cursos y el departamento al que pertenecen.",
+        "sql": "SELECT c.Title,(\n SELECT COUNT(sg.StudentID) FROM StudentGrade sg WHERE sg.CourseID=c.CourseID\n) AS TotalAlumnos,d.Name\nFROM Course c\nINNER JOIN Department d ON d.DepartmentID=c.DepartmentID\nWHERE Credits=4"
     },
     "query_15": {
-        "enunciado": "Resumen de cursos por departamento",
-        "sql": "SELECT d.Name AS Departamento, COUNT(c.CourseID) AS TotalCursos FROM Department d LEFT JOIN Course c ON d.DepartmentID = c.DepartmentID GROUP BY d.Name ORDER BY TotalCursos DESC"
+        "enunciado": "Para el departamento que tiene el mayor presupuesto asignado, mostrar el numero de instructores que posee, número de alumnos y numero de cursos.",
+        "sql": "SELECT TOP 1 d.Name,d.Budget,(\n SELECT COUNT(DISTINCT ci.PersonID) FROM CourseInstructor ci WHERE ci.CourseID IN (SELECT\nc2.CourseID FROM Course c2 WHERE c2.DepartmentID=d.DepartmentID)\n) as TotalInstructores,\n(\n SELECT COUNT(DISTINCT sg.StudentID) FROM StudentGrade sg WHERE sg.CourseID IN (SELECT\nc2.CourseID FROM Course c2 WHERE c2.DepartmentID=d.DepartmentID)\n) as TotalEstudiantes,\n(\n SELECT COUNT(DISTINCT c.CourseID) FROM Course c WHERE c.DepartmentID=d.DepartmentID\n) as Cursos\nFROM Department d\nORDER BY d.Budget DESC"
     },
     "query_16": {
         "enunciado": "Genera una lista de las ciudades con establecimientos donde se venden programas, sin que aparezcan valores duplicados",
-        "sql": "\tSELECT c.ciudad\nFROM Comercio c \nWHERE EXISTS (SELECT 1 FROM distribuye d WHERE d.cif = c.cif)\n"
+        "sql": "SELECT c.ciudad\nFROM Comercio c \nWHERE EXISTS (SELECT 1 FROM distribuye d WHERE d.cif = c.cif)"
     },
     "query_17": {
-        "enunciado": "Créditos totales por estudiante",
-        "sql": "SELECT p.LastName, p.FirstName, SUM(c.Credits) AS CreditosTotales FROM Person p JOIN StudentGrade sg ON p.PersonID = sg.StudentID JOIN Course c ON sg.CourseID = c.CourseID GROUP BY p.PersonID, p.LastName, p.FirstName ORDER BY CreditosTotales DESC"
+        "enunciado": "¿Cuáles son los fabricantes no españoles? Utilizar el operador IN.",
+        "sql": "SELECT nombre, pais\nFROM fabricante\nWHERE pais NOT IN('España');"
     },
     "query_18": {
-        "enunciado": "Cursos con URL (Online)",
-        "sql": "SELECT c.Title, oc.URL FROM Course c JOIN OnlineCourse oc ON c.CourseID = oc.CourseID WHERE oc.URL IS NOT NULL"
+        "enunciado": "Obtén un listado con los códigos de las distintas versiones de Windows.",
+        "sql": "SELECT *\nFROM programa \nWHERE nombre LIKE '%Windows%'"
     },
     "query_19": {
-        "enunciado": "Distribución de calificaciones",
-        "sql": "SELECT Grade, COUNT(*) AS Cantidad FROM StudentGrade GROUP BY Grade ORDER BY Grade"
+        "enunciado": "Genera una lista con los códigos de las distintas versiones de Windows y Access.",
+        "sql": "SELECT p.version, (SELECT d.codigo FROM desarrolla d WHERE d.codigo = p.codigo) AS codigo\nFROM programa p\nWHERE p.nombre LIKE '%Access%' OR p.nombre LIKE '%Windows%';"
     },
     "query_20": {
-        "enunciado": "Estudiantes con promedio mayor a 85",
-        "sql": "SELECT p.LastName, p.FirstName, AVG(CAST(sg.Grade AS FLOAT)) AS Promedio FROM Person p JOIN StudentGrade sg ON p.PersonID = sg.StudentID GROUP BY p.PersonID, p.LastName, p.FirstName HAVING AVG(CAST(sg.Grade AS FLOAT)) > 85 ORDER BY Promedio DESC"
+        "enunciado": "Obtén un listado que incluya los nombres de los clientes de edades comprendidas entre 10 y 25 y de los mayores de 50 años. Da una solución con BETWEEN y otra sin BETWEEN.",
+        "sql": "-- CON BETWEEN\nSELECT nombre,edad\nFROM cliente\nWHERE edad BETWEEN 10 AND 25 OR edad > 50\n\n-- SIN BETWEEN\nSELECT nombre,edad\nFROM cliente\nWHERE edad>10 and edad<25 OR edad > 50"
     },
     "query_21": {
-        "enunciado": "Cursos que no tienen instructor asignado",
-        "sql": "SELECT c.CourseID, c.Title FROM Course c WHERE c.CourseID NOT IN (SELECT DISTINCT CourseID FROM CourseInstructor)"
+        "enunciado": "¿Qué clientes terminan su nombre en la letra 'o' y, además, tiene algún programa registrado y son mayores de 30 años? Utilice subconsulta del lado del select.",
+        "sql": "SELECT c.nombre , (SELECT COUNT(r.codigo) FROM registra r WHERE r.dni = c.dni) AS programasRegistrados\nFROM cliente c\nWHERE c.nombre LIKE '%o' AND c.edad > 30"
     },
     "query_22": {
-        "enunciado": "Instructores y sus cursos (detalle)",
-        "sql": "SELECT p.LastName AS Instructor, c.Title AS Curso, d.Name AS Departamento FROM Person p JOIN CourseInstructor ci ON p.PersonID = ci.PersonID JOIN Course c ON ci.CourseID = c.CourseID JOIN Department d ON c.DepartmentID = d.DepartmentID ORDER BY p.LastName"
+        "enunciado": "Obtén un listado en el que aparezcan los programas cuya versión finalice por una letra i, o cuyo nombre comience por una A o por una W.",
+        "sql": "SELECT * FROM programa\nWHERE version LIKE '%i' OR nombre LIKE 'A%' OR nombre LIKE 'W%'"
     },
     "query_23": {
-        "enunciado": "Ubicaciones de cursos presenciales",
-        "sql": "SELECT DISTINCT Location, COUNT(CourseID) AS CantidadCursos FROM OnsiteCourse GROUP BY Location ORDER BY CantidadCursos DESC"
+        "enunciado": "Obtén un listado en el que aparezcan los programas cuya versión finalice por una letra i, o cuyo nombre comience por una A y termine por una S.",
+        "sql": "SELECT nombre\nFROM programa \nWHERE nombre LIKE '%i' OR nombre LIKE 'A%S';"
     },
     "query_24": {
-        "enunciado": "Estudiantes por departamento de cursos",
-        "sql": "SELECT d.Name AS Departamento, COUNT(DISTINCT sg.StudentID) AS TotalEstudiantes FROM Department d JOIN Course c ON d.DepartmentID = c.DepartmentID JOIN StudentGrade sg ON c.CourseID = sg.CourseID GROUP BY d.Name ORDER BY TotalEstudiantes DESC"
+        "enunciado": "Genera un listado de los programas que desarrolla Oracle en orden alfabético y quienes son los que lo distribuyen.",
+        "sql": "SELECT p.nombre,p.codigo,(SELECT DISTINCT STRING_AGG(c.nombre,',') FROM comercio c\nINNER JOIN distribuye dis ON dis.cif = c.cif\nWHERE dis.codigo = p.codigo) as distribuidores\nFROM programa p \nWHERE EXISTS (SELECT d.codigo FROM desarrolla d\nWHERE d.codigo = p.codigo AND d.id_fab = (SELECT f.id_fab FROM fabricante f \nWHERE nombre LIKE '%ORACLE%')\n)\nORDER BY p.nombre"
     },
     "query_25": {
-        "enunciado": "Consulta CTE: Cursos con estudiantes",
-        "sql": "WITH CursosConEstudiantes AS (SELECT c.CourseID, c.Title, COUNT(sg.StudentID) AS TotalEstudiantes FROM Course c LEFT JOIN StudentGrade sg ON c.CourseID = sg.CourseID GROUP BY c.CourseID, c.Title) SELECT * FROM CursosConEstudiantes WHERE TotalEstudiantes > 0 ORDER BY TotalEstudiantes DESC"
+        "enunciado": "Hacer un procedimiento que permita ingresar un cliente. Este a la vez debe previamente tener un Disparador que me valide que ese cliente ya existe, y que si esta correcto diga ingresado correctamente.",
+        "sql": "-- DISPARADOR\nCREATE TRIGGER verificacion\nON cliente\nINSTEAD OF INSERT\nAS\nBEGIN\n IF EXISTS (\n SELECT 1\n FROM cliente c\n JOIN inserted i ON c.dni = i.dni\n )\n BEGIN\n PRINT 'El cliente ya existía previamente';\n END\n ELSE\n BEGIN\n INSERT INTO cliente (dni, nombre, edad)\n SELECT dni, nombre, edad\n FROM inserted;\n PRINT 'Ingresado correctamente';\n END\nEND;\nGO\n\n-- PROCEDIMIENTO\nCREATE PROCEDURE InsertarCliente\n @dni VARCHAR(20),\n @nombre VARCHAR(100),\n @edad INT\nAS\nBEGIN\n SET NOCOUNT ON;\n INSERT INTO cliente (dni, nombre, edad)\n VALUES (@dni, @nombre, @edad);\nEND;\nGO\n\n-- Para probar:\nEXEC InsertarCliente @dni = '3003', @nombre = 'Fany Diaz', @edad = 22;"
     },
     "query_26": {
-        "enunciado": "Consulta CTE: Promedio por estudiante",
-        "sql": "WITH PromedioEstudiante AS (SELECT StudentID, AVG(CAST(Grade AS FLOAT)) AS Promedio FROM StudentGrade GROUP BY StudentID) SELECT p.LastName, p.FirstName, pe.Promedio FROM Person p JOIN PromedioEstudiante pe ON p.PersonID = pe.StudentID WHERE pe.Promedio > 80 ORDER BY pe.Promedio DESC"
+        "enunciado": "¿Qué medios ha utilizado para registrarse Pepe Pérez?",
+        "sql": "SELECT r.medio FROM registra r\nWHERE EXISTS(SELECT c.dni from cliente c WHERE c.dni = r.dni and c.nombre='Pepe Perez')"
     },
     "query_27": {
-        "enunciado": "Consulta CTE: Cursos populares",
-        "sql": "WITH PopularidadCursos AS (SELECT c.CourseID, c.Title, COUNT(sg.StudentID) AS Inscritos FROM Course c LEFT JOIN StudentGrade sg ON c.CourseID = sg.CourseID GROUP BY c.CourseID, c.Title) SELECT * FROM PopularidadCursos WHERE Inscritos > 5 ORDER BY Inscritos DESC"
+        "enunciado": "Hacer una función que nos de un listado de los nombres de las personas que se han registrado por Internet, junto al nombre de los programas para los que ha efectuado el registro.",
+        "sql": "CREATE FUNCTION funcionClientes (@medio NVARCHAR(50))\nRETURNS TABLE\nAS\nRETURN\n(\nSELECT rg.medio,(SELECT cl.nombre FROM cliente cl WHERE cl.dni = rg.dni) as cliente,\n(SELECT pr.nombre FROM programa pr WHERE pr.codigo = rg.codigo) as Programa\nFROM registra rg\nWHERE medio = @medio\n);\nGO\n-- Para ejecutar:\nSELECT * FROM funcionClientes('Internet');"
     },
     "query_28": {
-        "enunciado": "Consulta CTE: Instructores múltiples cursos",
-        "sql": "WITH InstructoresMultiples AS (SELECT ci.PersonID, COUNT(ci.CourseID) AS TotalCursos FROM CourseInstructor ci GROUP BY ci.PersonID HAVING COUNT(ci.CourseID) > 1) SELECT p.LastName, p.FirstName, im.TotalCursos FROM Person p JOIN InstructoresMultiples im ON p.PersonID = im.PersonID ORDER BY im.TotalCursos DESC"
+        "enunciado": "Genera un listado en el que aparezca cada cliente junto al programa que ha registrado, el medio con el que lo ha hecho y el comercio en el que lo ha adquirido.",
+        "sql": "SELECT (SELECT c.nombre FROM cliente c WHERE c.dni = r.dni) as cliente,\n(SELECT p.nombre FROM programa p WHERE p.codigo = r.codigo) as Programa,\nr.medio,\n(SELECT cm.nombre FROM comercio cm WHERE cm.cif = r.cif) as Comercio\nFROM registra r"
     },
     "query_29": {
-        "enunciado": "Estudiantes con más de 3 cursos",
-        "sql": "SELECT p.PersonID, p.LastName, p.FirstName, COUNT(sg.CourseID) AS CursosTomados FROM Person p JOIN StudentGrade sg ON p.PersonID = sg.StudentID GROUP BY p.PersonID, p.LastName, p.FirstName HAVING COUNT(sg.CourseID) > 3 ORDER BY CursosTomados DESC"
+        "enunciado": "Nombre de aquellos fabricantes cuyo país es el mismo que 'Oracle'. Utilice subconsulta.",
+        "sql": "SELECT nombre\nFROM fabricante\nWHERE pais = (SELECT pais FROM fabricante WHERE nombre LIKE ('Oracle'))"
     },
     "query_30": {
-        "enunciado": "Rango de calificaciones por curso",
-        "sql": "SELECT c.Title, MIN(CAST(sg.Grade AS FLOAT)) AS CalificacionMin, MAX(CAST(sg.Grade AS FLOAT)) AS CalificacionMax, AVG(CAST(sg.Grade AS FLOAT)) AS CalificacionProm FROM Course c JOIN StudentGrade sg ON c.CourseID = sg.CourseID GROUP BY c.CourseID, c.Title ORDER BY CalificacionProm DESC"
+        "enunciado": "Nombre de aquellos clientes que han registrado un producto de la misma forma que el cliente 'Pepe Pérez'. Utilice una subconsulta del lado del FROM.",
+        "sql": "SELECT DISTINCT cl.nombre\nFROM cliente cl\nWHERE cl.dni IN (\nSELECT r2.dni\nFROM registra r2 WHERE r2.medio IN(\n SELECT r.medio FROM registra r\nWHERE r.dni=(Select c.dni FROM cliente c where c.nombre = 'Pepe Perez')\n)\n) AND cl.nombre!='Pepe Perez'"
     },
     "query_31": {
-        "enunciado": "Cursos presenciales con horario específico",
-        "sql": "SELECT c.Title, oc.Days, oc.Location FROM Course c INNER JOIN OnsiteCourse oc ON c.CourseID = oc.CourseID WHERE oc.Days LIKE '%M%' ORDER BY oc.Days"
+        "enunciado": "Elabore una consulta que me muestre, los productos que comparte Cliente y Fabricante.",
+        "sql": "SELECT (SELECT cl.nombre FROM cliente cl WHERE cl.dni = rg.dni) AS Cliente,\n(SELECT f.nombre FROM fabricante f WHERE f.id_fab = d.id_fab) AS Fabricante,\n(SELECT p.nombre FROM programa p WHERE p.codigo = rg.codigo) AS Programa\nFROM registra rg\nINNER JOIN desarrolla d ON rg.codigo = d.codigo;"
     },
     "query_32": {
-        "enunciado": "Total de estudiantes por curso",
-        "sql": "SELECT c.CourseID, c.Title, COUNT(sg.StudentID) AS TotalEstudiantes FROM Course c LEFT JOIN StudentGrade sg ON c.CourseID = sg.CourseID GROUP BY c.CourseID, c.Title ORDER BY TotalEstudiantes DESC"
+        "enunciado": "Detalle de Ventas por Cliente: Muestra el nombre y apellido del cliente (Person), el número de pedido (SalesOrderHeader) y el total de la orden, pero solo de aquellos que han realizado compras.",
+        "sql": "SELECT\n p.FirstName,\n p.LastName,\n soh.SalesOrderID,\n soh.TotalDue\nFROM Sales.SalesOrderHeader soh\nINNER JOIN Sales.Customer c \n ON soh.CustomerID = c.CustomerID\nINNER JOIN Person.Person p \n ON c.PersonID = p.BusinessEntityID;"
     },
     "query_33": {
-        "enunciado": "Detalle completo de calificaciones con nombres",
-        "sql": "SELECT c.Title AS Curso, p.LastName AS Apellido, p.FirstName AS Nombre, sg.Grade AS Calificacion FROM Course c JOIN StudentGrade sg ON c.CourseID = sg.CourseID JOIN Person p ON sg.StudentID = p.PersonID ORDER BY c.Title, p.LastName"
+        "enunciado": "Catálogo de Productos con Categorías: Lista el nombre del producto, el nombre de su subcategoría y el nombre de su categoría principal. Tablas: Production.Product, Production.ProductSubcategory, Production.ProductCategory.",
+        "sql": "SELECT p.Name AS Producto, ISNULL(ps.Name, 'Sin categoría') AS Subcategoría,\nISNULL(pc.Name, 'Sin categoría') AS Categoría\nFROM Production.Product p \nLEFT JOIN Production.ProductSubcategory ps ON p.ProductSubcategoryID = ps.ProductSubcategoryID\nLEFT JOIN Production.ProductCategory pc ON ps.ProductCategoryID = pc.ProductCategoryID\nORDER BY pc.Name, ps.Name, p.Name;"
     },
     "query_34": {
-        "enunciado": "Cursos sin horario definido (Online)",
-        "sql": "SELECT c.Title, oc.URL FROM Course c JOIN OnlineCourse oc ON c.CourseID = oc.CourseID"
+        "enunciado": "Ventas por Territorio y Vendedor: Muestra el nombre del vendedor (Person), el nombre del territorio de ventas y el total de ventas (SalesYTD) de ese territorio",
+        "sql": "SELECT (SELECT p.FirstName +' ' +p.LastName FROM Person.Person p \nWHERE p.BusinessEntityID = sp.BusinessEntityID) as NombreCompleto,\n(SELECT st.Name FROM Sales.SalesTerritory st WHERE st.TerritoryID = sp.TerritoryID) as Territorio,\n(SELECT st.SalesYTD FROM Sales.SalesTerritory st WHERE st.TerritoryID = sp.TerritoryID)\nas TotalVentasTerritorio FROM Sales.SalesPerson sp"
     },
     "query_35": {
-        "enunciado": "Estadísticas por tipo de curso",
-        "sql": "SELECT 'Onsite' AS TipoCurso, COUNT(*) AS Total FROM OnsiteCourse UNION SELECT 'Online' AS TipoCurso, COUNT(*) AS Total FROM OnlineCourse"
+        "enunciado": "Ubicación de Inventario: Muestra el nombre del producto, el nombre del estante (Shelf), la cantidad disponible y el nombre del almacén o ubicación (Location). Tablas: Production.Product, Production.ProductInventory, Production.Location.",
+        "sql": "SELECT pdi.Shelf AS Estante, pdi.Quantity AS CantidadDisponible,\n(SELECT pdd.Name FROM Production.Product pdd WHERE pdd.ProductID = pdi.ProductID) AS Producto,\n(SELECT pll.Name FROM Production.Location pll WHERE pll.LocationID = pdi.LocationID) AS Locacion\nFROM Production.ProductInventory pdi\nORDER BY pdi.Shelf, Locacion"
     },
     "query_36": {
-        "enunciado": "Instructores y carga académica",
-        "sql": "SELECT p.LastName, p.FirstName, COUNT(ci.CourseID) AS CursosQueImparte FROM Person p LEFT JOIN CourseInstructor ci ON p.PersonID = ci.PersonID WHERE p.PersonType = 'Instructor' GROUP BY p.PersonID, p.LastName, p.FirstName ORDER BY CursosQueImparte DESC"
+        "enunciado": "Empleados y sus Departamentos: Obtén el nombre y apellido del empleado, su cargo (JobTitle) y el nombre del departamento al que pertenece actualmente.",
+        "sql": "SELECT (SELECT p.FirstName +' ' +p.LastName FROM Person.Person p where\np.BusinessEntityID=eh.BusinessEntityID) as NombreCompleto,\n(SELECT e.JobTitle FROM HumanResources.Employee e WHERE e.BusinessEntityID=eh.BusinessEntityID) as Cargo,\n(SELECT d.Name FROM HumanResources.Department d WHERE d.DepartmentID = eh.DepartmentID) as Departamento\nFROM HumanResources.EmployeeDepartmentHistory eh WHERE eh.EndDate IS NULL"
     },
     "query_37": {
-        "enunciado": "Consulta compleja: Cursos, estudiantes e instructores",
-        "sql": "WITH Cursos AS (SELECT c.CourseID, c.Title FROM Course c), AlumnosPorCurso AS (SELECT sg.CourseID, sg.StudentID, p.LastName + ', ' + p.FirstName AS Estudiante FROM StudentGrade sg JOIN Person p ON sg.StudentID = p.PersonID), InstructoresPorCurso AS (SELECT ci.CourseID, p.LastName + ', ' + p.FirstName AS Instructor FROM CourseInstructor ci JOIN Person p ON ci.PersonID = p.PersonID) SELECT cu.CourseID, cu.Title, a.Estudiante, i.Instructor FROM Cursos cu LEFT JOIN AlumnosPorCurso a ON cu.CourseID = a.CourseID LEFT JOIN InstructoresPorCurso i ON cu.CourseID = i.CourseID ORDER BY cu.Title, a.Estudiante"
+        "enunciado": "Proveedores por Producto: Muestra el nombre de los productos y los nombres de los proveedores que los suministran. Tablas: Production.Product, Purchasing.ProductVendor, Purchasing.Vendor.",
+        "sql": "SELECT pdd.Name AS Producto,\n(SELECT prv.Name FROM Purchasing.Vendor prv WHERE prv.BusinessEntityID = pdv.BusinessEntityID) AS Proveedor\nFROM Purchasing.ProductVendor pdv\nINNER JOIN Production.Product pdd ON pdv.ProductID = pdd.ProductID\nORDER BY Proveedor"
     },
     "query_38": {
-        "enunciado": "Top 10 estudiantes con mejores promedios",
-        "sql": "SELECT TOP 10 p.LastName, p.FirstName, AVG(CAST(sg.Grade AS FLOAT)) AS Promedio FROM Person p JOIN StudentGrade sg ON p.PersonID = sg.StudentID GROUP BY p.PersonID, p.LastName, p.FirstName ORDER BY Promedio DESC"
+        "enunciado": "Direcciones de Envío de Pedidos: Lista el ID de la orden de venta, la fecha de pedido y la ciudad y estado completos a donde se envió.",
+        "sql": "SELECT so.SalesOrderID, so.OrderDate,\n(SELECT a.City + ' , ' +sp.Name as EnviadoA FROM Person.Address a INNER JOIN Person.StateProvince sp \nON sp.StateProvinceID=a.StateProvinceID WHERE a.AddressID=so.ShipToAddressID ) as DireccionDeEnvio \nFROM Sales.SalesOrderHeader so"
     },
     "query_39": {
-        "enunciado": "Días con más cursos presenciales",
-        "sql": "SELECT Days, COUNT(*) AS CantidadCursos FROM OnsiteCourse GROUP BY Days ORDER BY CantidadCursos DESC"
+        "enunciado": "Historial de Precios y Productos: Muestra el nombre del producto, su precio de lista actual y la descripción del producto en idioma español (o inglés si prefieres). Tablas: Production.Product, Production.ProductModel, Production.ProductModelProductDescriptionCulture, Production.ProductDescription.",
+        "sql": "SELECT p.Name AS Nombre, p.ListPrice AS PrecioLista,\n(SELECT pd.Description FROM Production.ProductDescription pd\nINNER JOIN Production.ProductModelProductDescriptionCulture pmc ON pd.ProductDescriptionID =\npmc.ProductDescriptionID\nWHERE pmc.ProductModelID = p.ProductModelID AND pmc.CultureID = 'en') AS Descripcion\nFROM Production.Product p\nWHERE p.ProductModelID IN (\n SELECT pmc.ProductModelID\n FROM Production.ProductModelProductDescriptionCulture pmc\n WHERE pmc.CultureID = 'en'\n);"
     },
     "query_40": {
-        "enunciado": "Estudiantes sin instructor visible",
-        "sql": "SELECT DISTINCT p.PersonID, p.LastName, p.FirstName FROM Person p JOIN StudentGrade sg ON p.PersonID = sg.StudentID WHERE sg.CourseID NOT IN (SELECT DISTINCT CourseID FROM CourseInstructor)"
+        "enunciado": "Detalle de Ofertas Especiales en Ventas: Muestra el número de pedido, el nombre del producto vendido y la descripción de la oferta especial (descuento) que se aplicó a ese producto.",
+        "sql": "SELECT so.SalesOrderID,(\nSELECT p.Name FROM Production.Product p WHERE p.ProductID = so.ProductID) as Producto,\n(SELECT sp.Description FROM Sales.SpecialOffer sp WHERE sp.SpecialOfferID= so.SpecialOfferID) as Descripcion \nFROM Sales.SalesOrderDetail so Where so.SpecialOfferID !=1;"
     },
     "query_41": {
-        "enunciado": "Cursos con alta demanda (>10 estudiantes)",
-        "sql": "SELECT c.CourseID, c.Title, COUNT(sg.StudentID) AS Demanda FROM Course c JOIN StudentGrade sg ON c.CourseID = sg.CourseID GROUP BY c.CourseID, c.Title HAVING COUNT(sg.StudentID) > 10 ORDER BY Demanda DESC"
+        "enunciado": "Contactos de Proveedores: Muestra el nombre de la empresa proveedora, el nombre de la persona de contacto y el tipo de contacto que tiene. Tablas: Purchasing.Vendor, Person.BusinessEntityContact, Person.Person, Person.ContactType.",
+        "sql": "SELECT v.Name AS Empresa,\n(SELECT p.FirstName + ' ' + p.LastName FROM Person.Person p WHERE p.BusinessEntityID = bec.PersonID) AS PersonaContacto,\n(SELECT ct.Name FROM Person.ContactType ct WHERE ct.ContactTypeID = bec.ContactTypeID) AS TipoContacto\nFROM Purchasing.Vendor v\nINNER JOIN Person.BusinessEntity be ON v.BusinessEntityID = be.BusinessEntityID\nINNER JOIN Person.BusinessEntityContact bec ON be.BusinessEntityID = bec.BusinessEntityID\nORDER BY TipoContacto;"
     },
     "query_42": {
-        "enunciado": "Matrícula por departamento",
-        "sql": "SELECT d.Name AS Departamento, COUNT(sg.StudentID) AS TotalMatriculas FROM Department d JOIN Course c ON d.DepartmentID = c.DepartmentID JOIN StudentGrade sg ON c.CourseID = sg.CourseID GROUP BY d.Name ORDER BY TotalMatriculas DESC"
+        "enunciado": "Productos vendidos recientemente: Encuentra el nombre de todos los productos (Production.Product) cuyos IDs estén presentes en la tabla de detalles de ventas (Sales.SalesOrderDetail) con una cantidad pedida superior a 40 unidades.",
+        "sql": "SELECT p.Name,so.OrderQty FROM Production.Product p INNER JOIN Sales.SalesOrderDetail so ON\np.ProductID = so.ProductID \nWHERE so.OrderQty > 40"
     },
     "query_43": {
-        "enunciado": "Cursos que no son ni Onsite ni Online",
-        "sql": "SELECT c.CourseID, c.Title FROM Course c WHERE c.CourseID NOT IN (SELECT CourseID FROM OnsiteCourse) AND c.CourseID NOT IN (SELECT CourseID FROM OnlineCourse)"
+        "enunciado": "Clientes de territorios específicos: Obtén el nombre y apellido de las personas (Person.Person) cuyo BusinessEntityID corresponda a clientes (Sales.Customer) asignados a los territorios con los nombres 'Northwest' o 'Southwest'.",
+        "sql": "SELECT p.FirstName + ' ' + p.LastName AS Nombre,\n(SELECT st.Name FROM Sales.SalesTerritory st\nWHERE (st.Name LIKE '%Northwest%' OR st.Name LIKE '%Southwest%')\nAND st.TerritoryID = (SELECT c.TerritoryID FROM Sales.Customer c\nWHERE c.PersonID = p.BusinessEntityID)) AS Territorio\nFROM Person.Person p\nWHERE EXISTS (\n SELECT 1\n FROM Sales.Customer sc\n WHERE sc.PersonID = p.BusinessEntityID\n AND sc.TerritoryID IN (SELECT st.TerritoryID FROM Sales.SalesTerritory st \n WHERE st.name LIKE '%Northwest%' OR st.name LIKE '%Southwest%'))\n ORDER BY Territorio;"
     },
     "query_44": {
-        "enunciado": "Eficiencia de instructores (promedio calificaciones)",
-        "sql": "SELECT p.LastName, p.FirstName, AVG(CAST(sg.Grade AS FLOAT)) AS PromedioCalificaciones FROM Person p JOIN CourseInstructor ci ON p.PersonID = ci.PersonID JOIN StudentGrade sg ON ci.CourseID = sg.CourseID GROUP BY p.PersonID, p.LastName, p.FirstName ORDER BY PromedioCalificaciones DESC"
+        "enunciado": "Vendedores con bonificaciones altas: Muestra los nombres de los empleados que tienen un ID de vendedor (Sales.SalesPerson) cuya bonificación (Bonus) sea mayor a $5,000.",
+        "sql": "SELECT (SELECT p.FirstName + ' ' + p.LastName FROM Person.Person p WHERE p.BusinessEntityID =\nsp.BusinessEntityID) as Nombre, sp.Bonus FROM Sales.SalesPerson sp WHERE sp.Bonus > 5000;"
     },
     "query_45": {
-        "enunciado": "Listado de ubicaciones únicas",
-        "sql": "SELECT DISTINCT Location FROM OnsiteCourse WHERE Location IS NOT NULL ORDER BY Location"
+        "enunciado": "Precios superiores al promedio de subcategoría: Encuentra los nombres de productos cuyo ListPrice sea mayor que cualquiera de los precios promedio de los productos en la subcategoría 'Mountain Bikes'.",
+        "sql": "WITH Promedio AS (\n SELECT AVG(p.ListPrice) AS PrecioPromedio FROM Production.Product p\n INNER JOIN Production.ProductSubcategory ps ON p.ProductSubcategoryID = ps.ProductSubcategoryID\n WHERE ps.Name = 'Mountain Bikes'\n)\nSELECT p.Name AS Producto, ps.Name AS Subcategoria, CONVERT(DECIMAL(10,2), p.ListPrice) AS Precio\nFROM Production.Product p\nINNER JOIN Production.ProductSubcategory ps ON p.ProductSubcategoryID = ps.ProductSubcategoryID\nWHERE p.ListPrice > (SELECT PrecioPromedio FROM Promedio);"
     },
     "query_46": {
-        "enunciado": "JSON: Cursos con estudiantes (SQL Server)",
-        "sql": "SELECT c.CourseID, c.Title, (SELECT sg.StudentID, p.LastName FROM StudentGrade sg JOIN Person p ON sg.StudentID = p.PersonID WHERE sg.CourseID = c.CourseID FOR JSON AUTO) AS Estudiantes FROM Course c FOR JSON AUTO"
+        "enunciado": "Productos con inventario bajo: Selecciona el nombre de los productos cuyo inventario actual en cualquier ubicación de la tabla Production.ProductInventory sea exactamente inferior a 10 unidades.",
+        "sql": "SELECT p.Name,pri.Quantity FROM Production.ProductInventory pri\nINNER JOIN Production.Product p ON pri.ProductID=p.ProductID\nWHERE pri.Quantity < 10;"
     },
     "query_47": {
-        "enunciado": "XML: Cursos con estudiantes",
-        "sql": "SELECT c.CourseID, c.Title, (SELECT sg.StudentID, p.LastName FROM StudentGrade sg JOIN Person p ON sg.StudentID = p.PersonID WHERE sg.CourseID = c.CourseID FOR XML AUTO) AS Estudiantes FROM Course c FOR XML AUTO"
+        "enunciado": "Órdenes con descuentos especiales: Lista los IDs de las órdenes de venta (SalesOrderHeader) que tengan al menos un detalle de venta (SalesOrderDetail) cuyo precio unitario sea menor que el precio de lista del producto original (usando ANY contra la tabla de productos).",
+        "sql": "SELECT DISTINCT soh.SalesOrderID FROM Sales.SalesOrderHeader soh\nWHERE EXISTS ( SELECT 1 FROM Sales.SalesOrderDetail sod\nWHERE sod.SalesOrderID = soh.SalesOrderID AND sod.UnitPrice < ANY (\nSELECT p.ListPrice FROM Production.Product p WHERE p.ProductID = sod.ProductID));"
     },
     "query_48": {
-        "enunciado": "Validación: Cursos con créditos incorrectos",
-        "sql": "SELECT CourseID, Title, Credits FROM Course WHERE Credits <= 0 OR Credits IS NULL"
+        "enunciado": "El producto más caro de todos: Encuentra el nombre del producto cuyo ListPrice sea mayor o igual que todos los precios de lista de la tabla Production.Product. (no ocupar MAX).",
+        "sql": "SELECT TOP 1 p.Name, p.ListPrice FROM Production.Product p ORDER BY p.ListPrice DESC"
     },
     "query_49": {
-        "enunciado": "Backup de calificaciones (consulta de respaldo)",
-        "sql": "SELECT * INTO StudentGrade_Backup FROM StudentGrade WHERE 1=0"
+        "enunciado": "Vendedores que superan a la competencia: Muestra el nombre de los vendedores (SalesPerson) cuyas ventas acumuladas (SalesYTD) sean mayores que todas las cuotas de ventas (SalesQuota) asignadas a los demás vendedores.",
+        "sql": "SELECT sp.BusinessEntityID, p.FirstName + ' ' + p.LastName AS Vendedor, sp.SalesYTD\nFROM Sales.SalesPerson sp\nINNER JOIN Person.Person p\nON sp.BusinessEntityID = p.BusinessEntityID\nWHERE sp.SalesYTD > ALL (\n SELECT sq.SalesQuota FROM Sales.SalesPersonQuotaHistory sq\n WHERE sq.BusinessEntityID <> sp.BusinessEntityID\n);"
     },
     "query_50": {
-        "enunciado": "Consulta de auditoría: Calificaciones modificadas recientemente",
-        "sql": "SELECT * FROM StudentGrade WHERE ModifiedDate >= DATEADD(DAY, -7, GETDATE())"
+        "enunciado": "Ventas totales por categoría: Queremos saber cuánto se ha vendido en total por cada categoría de producto. Tablas: Sales.SalesOrderDetail, Production.Product, Production.ProductSubcategory, Production.ProductCategory.",
+        "sql": "SELECT pc.Name,(\nSELECT SUM(sod.LineTotal) FROM Sales.SalesOrderDetail sod \nINNER JOIN Production.Product p ON sod.ProductID=p.ProductID\nINNER JOIN Production.ProductSubcategory sc ON sc.ProductSubcategoryID=p.ProductSubcategoryID\nWHERE sc.ProductCategoryID=pc.ProductCategoryID\n) FROM Production.ProductCategory pc"
     },
     "query_51": {
-        "enunciado": "Estudiantes por rango de edad",
-        "sql": "SELECT CASE WHEN YEAR(GETDATE()) - YEAR(BirthDate) < 20 THEN 'Menos de 20' WHEN YEAR(GETDATE()) - YEAR(BirthDate) BETWEEN 20 AND 25 THEN '20-25' ELSE 'Más de 25' END AS RangoEdad, COUNT(*) AS Cantidad FROM Person WHERE PersonType = 'Student' GROUP BY CASE WHEN YEAR(GETDATE()) - YEAR(BirthDate) < 20 THEN 'Menos de 20' WHEN YEAR(GETDATE()) - YEAR(BirthDate) BETWEEN 20 AND 25 THEN '20-25' ELSE 'Más de 25' END"
+        "enunciado": "Subcategorías con ventas superiores a $1,000,000, nombre de subcategoria y venta por subcategoria.",
+        "sql": "SELECT (SELECT ps.Name FROM Production.ProductSubcategory ps\nWHERE ps.ProductSubcategoryID = p.ProductSubcategoryID) AS Subcategoria,\nSUM(sod.OrderQty * sod.UnitPrice) AS VentasTotales\nFROM Sales.SalesOrderDetail sod\nINNER JOIN Production.Product p\n ON sod.ProductID = p.ProductID\nGROUP BY p.ProductSubcategoryID\nHAVING SUM(sod.OrderQty * sod.UnitPrice) > (\n SELECT 1000000\n);"
     },
     "query_52": {
-        "enunciado": "Cursos agrupados por rango de créditos",
-        "sql": "SELECT CASE WHEN Credits <= 2 THEN 'Créditos Bajos' WHEN Credits BETWEEN 3 AND 4 THEN 'Créditos Medios' ELSE 'Créditos Altos' END AS RangoCreditos, COUNT(*) AS CantidadCursos FROM Course GROUP BY CASE WHEN Credits <= 2 THEN 'Créditos Bajos' WHEN Credits BETWEEN 3 AND 4 THEN 'Créditos Medios' ELSE 'Créditos Altos' END"
+        "enunciado": "Vendedores con promedio de venta alto: Encuentra a los vendedores y la venta de cada vendedor, cuyo promedio de venta por pedido sea superior a $20,000. El nombre y apellido debe aparecer en una sola columna, ordenado de mayor a menor venta.",
+        "sql": "WITH VentasPorVendedor AS (\nSELECT (SELECT p.FirstName + ' '+p.LastName FROM Person.Person p WHERE\np.BusinessEntityID=sp.BusinessEntityID) as Vendedor ,\n(SELECT AVG(so.TotalDue) FROM Sales.SalesOrderHeader so WHERE\nso.SalesPersonID=sp.BusinessEntityID) as Promedio\nFROM Sales.SalesPerson sp\n)\nSELECT Vendedor,Promedio\nFROM VentasPorVendedor\nWHERE Promedio > 20000\nORDER BY Promedio DESC;"
     },
     "query_53": {
-        "enunciado": "Pivot: Estudiantes por curso",
-        "sql": "SELECT * FROM (SELECT c.Title, p.LastName FROM Course c JOIN StudentGrade sg ON c.CourseID = sg.CourseID JOIN Person p ON sg.StudentID = p.PersonID) AS SourceTable PIVOT (COUNT(LastName) FOR Title IN ([Matemáticas], [Historia], [Literatura])) AS PivotTable"
+        "enunciado": "Clientes con más de 20 pedidos: Identifica a los clientes más fieles (por su ID) que han realizado más de 20 órdenes de compra, y el total de pedidos que han hecho.",
+        "sql": "SELECT pp.FirstName + ' ' + pp.LastName AS NombreCompleto,\n(SELECT COUNT(soh.SalesOrderID) FROM Sales.SalesOrderHeader soh\nWHERE soh.CustomerID = sc.CustomerID) AS TotalPedidos\nFROM Person.Person pp\nINNER JOIN Sales.Customer sc ON sc.PersonID = pp.BusinessEntityID\nWHERE (SELECT COUNT(soh.SalesOrderID) FROM Sales.SalesOrderHeader soh\nWHERE soh.CustomerID = sc.CustomerID) > 20;"
     },
     "query_54": {
-        "enunciado": "ROW_NUMBER: Ranking de estudiantes por promedio",
-        "sql": "SELECT p.LastName, p.FirstName, AVG(CAST(sg.Grade AS FLOAT)) AS Promedio, ROW_NUMBER() OVER (ORDER BY AVG(CAST(sg.Grade AS FLOAT)) DESC) AS Ranking FROM Person p JOIN StudentGrade sg ON p.PersonID = sg.StudentID GROUP BY p.PersonID, p.LastName, p.FirstName"
+        "enunciado": "Departamentos con más de 10 empleados: ¿Qué departamentos de la empresa son los más grandes actualmente?",
+        "sql": "SELECT d.Name,COUNT(eh.BusinessEntityID) AS empleados FROM\nHumanResources.EmployeeDepartmentHistory eh\nINNER JOIN HumanResources.Employee e ON eh.BusinessEntityID = e.BusinessEntityID\nINNER JOIN HumanResources.Department d ON eh.DepartmentID = d.DepartmentID \nWHERE eh.EndDate IS NULL\nGROUP BY d.Name\nHAVING COUNT(eh.BusinessEntityID) > 10\nORDER BY Empleados DESC;"
     },
     "query_55": {
-        "enunciado": "LAG: Comparativa de calificaciones (curso anterior)",
-        "sql": "SELECT sg.StudentID, sg.CourseID, sg.Grade, LAG(sg.Grade) OVER (PARTITION BY sg.StudentID ORDER BY sg.CourseID) AS CalificacionAnterior FROM StudentGrade sg"
+        "enunciado": "Años con ingresos por ventas excepcionales: Filtra los años en los que la suma total de ventas superó los $30,000,000.",
+        "sql": "SELECT YEAR(soh.OrderDate) AS Año,\nSUM(soh.TotalDue) AS TotalVentas\nFROM Sales.SalesOrderHeader soh\nGROUP BY YEAR(soh.OrderDate)\nHAVING SUM(soh.TotalDue) > 30000000\nORDER BY Año;"
     },
     "query_56": {
-        "enunciado": "Recursive CTE: Jerarquía de departamentos (si existe)",
-        "sql": "WITH Jerarquia AS (SELECT DepartmentID, Name, ParentDepartmentID FROM Department WHERE ParentDepartmentID IS NULL UNION ALL SELECT d.DepartmentID, d.Name, d.ParentDepartmentID FROM Department d INNER JOIN Jerarquia j ON d.ParentDepartmentID = j.DepartmentID) SELECT * FROM Jerarquia"
+        "enunciado": "Productos con stock crítico por almacén: Muestra el ID del producto y el total de existencias, pero solo para aquellos productos cuya suma total en todos los estantes sea menor a 5 unidades. Resuélvalo de 3 formas: Con join, con subconsultas y con with CTE",
+        "sql": "-- CON JOIN\nSELECT\n pi.ProductID,\n SUM(pi.Quantity) AS TotalExistencias\nFROM Production.ProductInventory pi\nGROUP BY pi.ProductID\nHAVING SUM(pi.Quantity) < 5\nORDER BY TotalExistencias ASC;\n\n-- CON SUBCONSULTA\nSELECT DISTINCT\n pi.ProductID,\n (SELECT SUM(pi2.Quantity)\n FROM Production.ProductInventory pi2 \n WHERE pi2.ProductID = pi.ProductID) AS TotalExistencias\nFROM Production.ProductInventory pi\nWHERE (SELECT SUM(pi2.Quantity)\n FROM Production.ProductInventory pi2 \n WHERE pi2.ProductID = pi.ProductID) < 5\nORDER BY TotalExistencias ASC;\n\n-- CON CTE\nWITH StockPorProducto AS (\n SELECT\n ProductID,\n SUM(Quantity) AS TotalExistencias\n FROM Production.ProductInventory\n GROUP BY ProductID\n)\nSELECT\n ProductID,\n TotalExistencias\nFROM StockPorProducto\nWHERE TotalExistencias < 5\nORDER BY TotalExistencias ASC;"
     },
     "query_57": {
-        "enunciado": "Datos duplicados en calificaciones",
-        "sql": "SELECT StudentID, CourseID, COUNT(*) AS Duplicados FROM StudentGrade GROUP BY StudentID, CourseID HAVING COUNT(*) > 1"
+        "enunciado": "Queremos obtener los nombres de los productos y el ProductNumber que han aparecido en órdenes de venta donde el cliente es de un territorio específico (por ejemplo, 'Northwest'). Utilice subconsulta. Tablas: Production.Product (Principal), Sales.SalesOrderDetail y Sales.SalesOrderHeader (En la subconsulta).",
+        "sql": "SELECT pp.Name AS Producto, pp.ProductNumber\nFROM Production.Product pp\nWHERE pp.ProductID IN (SELECT sod.ProductID\nFROM Sales.SalesOrderDetail sod\nWHERE sod.SalesOrderID IN (SELECT soh.SalesOrderID\nFROM Sales.SalesOrderHeader soh\nWHERE soh.TerritoryID = (SELECT st.TerritoryID\nFROM Sales.SalesTerritory st\nWHERE st.Name LIKE '%Northwest%')));"
     },
     "query_58": {
-        "enunciado": "Correlación entre créditos y calificaciones",
-        "sql": "SELECT c.Credits, AVG(CAST(sg.Grade AS FLOAT)) AS PromedioCalificacion FROM Course c JOIN StudentGrade sg ON c.CourseID = sg.CourseID GROUP BY c.Credits ORDER BY c.Credits"
+        "enunciado": "Encontrar los proveedores (Vendor) que tienen al menos un producto asociado en la tabla ProductVendor y quienes son los que no tienen productos asociados, clasificarlos por asociado y no asociado. Con subconsulta y unión.",
+        "sql": "SELECT\n v.Name AS Proveedor,\n 'asociado' AS Estado\nFROM Purchasing.Vendor v\nWHERE v.BusinessEntityID IN (\n SELECT DISTINCT pv.BusinessEntityID\n FROM Purchasing.ProductVendor pv\n)\nUNION\nSELECT\n v.Name AS Proveedor,\n 'no asociado' AS Estado\nFROM Purchasing.Vendor v\nWHERE v.BusinessEntityID NOT IN (\n SELECT DISTINCT pv.BusinessEntityID\n FROM Purchasing.ProductVendor pv\n)\nORDER BY Estado DESC, Proveedor;"
     },
     "query_59": {
-        "enunciado": "Materias con mejor rendimiento (promedio > 90)",
-        "sql": "SELECT c.Title, AVG(CAST(sg.Grade AS FLOAT)) AS Promedio FROM Course c JOIN StudentGrade sg ON c.CourseID = sg.CourseID GROUP BY c.CourseID, c.Title HAVING AVG(CAST(sg.Grade AS FLOAT)) > 90 ORDER BY Promedio DESC"
+        "enunciado": "Listar los nombres de los empleados que han trabajado (o trabajan) en departamentos relacionados con 'Executive' o 'Sales'. Tablas: Person.Person (Principal), HumanResources.EmployeeDepartmentHistory y HumanResources.Department (En la subconsulta). Resuélvalo de 3 formas: Con join, con subconsultas sin join y con with CTE",
+        "sql": "-- CON JOIN\nSELECT pp.FirstName + ' ' + pp.LastName AS Empleado , hd.Name AS Departamento\nFROM HumanResources.Employee hre\nINNER JOIN Person.Person pp ON hre.BusinessEntityID = pp.BusinessEntityID\nINNER JOIN HumanResources.EmployeeDepartmentHistory hh ON hh.BusinessEntityID = hre.BusinessEntityID\nINNER JOIN HumanResources.Department hd ON hh.DepartmentID = hd.DepartmentID\nWHERE hd.Name LIKE '%Executive%' OR hd.Name LIKE '%Sales%'\nORDER BY hd.Name\n\n-- CON SUBCONSULTAS\nSELECT pp.FirstName + ' ' + pp.LastName AS Empleado,\n (SELECT hd.Name\n FROM HumanResources.Department hd\n WHERE hd.DepartmentID = (\n SELECT hh.DepartmentID\n FROM HumanResources.EmployeeDepartmentHistory hh\n WHERE hh.BusinessEntityID = hre.BusinessEntityID\n )\n ) AS Departamento\nFROM HumanResources.Employee hre\nINNER JOIN Person.Person pp \n ON hre.BusinessEntityID = pp.BusinessEntityID\nWHERE (SELECT hd.Name\n FROM HumanResources.Department hd\n WHERE hd.DepartmentID = (\n SELECT hh.DepartmentID\n FROM HumanResources.EmployeeDepartmentHistory hh\n WHERE hh.BusinessEntityID = hre.BusinessEntityID\n )\n ) LIKE '%Executive%'\n OR (SELECT hd.Name\n FROM HumanResources.Department hd\n WHERE hd.DepartmentID = (\n SELECT hh.DepartmentID\n FROM HumanResources.EmployeeDepartmentHistory hh\n WHERE hh.BusinessEntityID = hre.BusinessEntityID\n )\n ) LIKE '%Sales%'\nORDER BY Departamento;\n\n-- CON WITH CTE\nWITH EmpleadoDepartamento AS (\nSELECT hh.BusinessEntityID,hd.Name AS Departamento\nFROM HumanResources.EmployeeDepartmentHistory hh\nINNER JOIN HumanResources.Department hd ON hh.DepartmentID = hd.DepartmentID\n)\nSELECT pp.FirstName + ' ' + pp.LastName AS Empleado, ed.Departamento\nFROM HumanResources.Employee hre\nINNER JOIN Person.Person pp ON hre.BusinessEntityID = pp.BusinessEntityID\nINNER JOIN EmpleadoDepartamento ed ON hre.BusinessEntityID = ed.BusinessEntityID\nWHERE ed.Departamento LIKE '%Executive%' OR ed.Departamento LIKE '%Sales%'\nORDER BY ed.Departamento;"
     },
     "query_60": {
-        "enunciado": "Conteo total de entidades",
-        "sql": "SELECT 'Personas' AS Entidad, COUNT(*) AS Total FROM Person UNION SELECT 'Cursos' AS Entidad, COUNT(*) AS Total FROM Course UNION SELECT 'Calificaciones' AS Entidad, COUNT(*) AS Total FROM StudentGrade UNION SELECT 'Departamentos' AS Entidad, COUNT(*) AS Total FROM Department"
+        "enunciado": "Ventas totales por subcategoría de producto, la subconsulta calcula las ventas por producto y luego se agrupa por subcategoría. Ocupe subconsultas del lado del from.",
+        "sql": "SELECT\n ps.Name AS Subcategoria,\n SUM(VentasPorProducto.TotalVentas) AS TotalSubcategoria\nFROM Production.ProductSubcategory ps\nINNER JOIN (\n SELECT\n p.ProductID,\n p.ProductSubcategoryID,\n SUM(sod.LineTotal) AS TotalVentas\n FROM Sales.SalesOrderDetail sod\n INNER JOIN Production.Product p ON sod.ProductID = p.ProductID\n WHERE p.ProductSubcategoryID IS NOT NULL\n GROUP BY p.ProductID, p.ProductSubcategoryID\n) AS VentasPorProducto ON ps.ProductSubcategoryID = VentasPorProducto.ProductSubcategoryID\nGROUP BY ps.ProductSubcategoryID, ps.Name\nORDER BY TotalSubcategoria DESC;"
     },
     "query_61": {
-        "enunciado": "Resumen ejecutivo del sistema",
-        "sql": "SELECT (SELECT COUNT(*) FROM Person WHERE PersonType = 'Student') AS TotalEstudiantes, (SELECT COUNT(*) FROM Person WHERE PersonType = 'Instructor') AS TotalInstructores, (SELECT COUNT(*) FROM Course) AS TotalCursos, (SELECT COUNT(*) FROM StudentGrade) AS TotalCalificaciones, (SELECT AVG(CAST(Grade AS FLOAT)) FROM StudentGrade) AS PromedioGeneral"
+        "enunciado": "Número de empleados por departamento. Solo cuando departamento tiene más de 10 empleados. La subconsulta cuenta los empleados por departamento y luego se filtran los que tienen más de 10.",
+        "sql": "SELECT d.Name AS Departamento,\n(SELECT COUNT(hh.BusinessEntityID) FROM HumanResources.EmployeeDepartmentHistory hh\nWHERE hh.DepartmentID = d.DepartmentID) AS NumeroEmpleados\nFROM HumanResources.Department d\nWHERE (SELECT COUNT(hh.BusinessEntityID)FROM HumanResources.EmployeeDepartmentHistory hh\nWHERE hh.DepartmentID = d.DepartmentID) > 10;"
     }
 }
