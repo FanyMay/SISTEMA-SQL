@@ -350,16 +350,30 @@
         document.getElementById('results-container').innerHTML = html;
     }
     
-    // Cargar consulta guardada
-    document.querySelectorAll('.btn-load-query').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const idx = btn.dataset.idx;
-            const consulta = await cargarDatosConsulta(idx);
-            document.getElementById('sql-editor').value = consulta.sql || '';
-            actualizarEnunciadoMostrado(consulta.enunciado || '');
-            cambiarPestana('sql-tab');
-        });
+    // Cargar consulta guardada con scroll automático al editor
+document.querySelectorAll('.btn-load-query').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const idx = btn.dataset.idx;
+        const consulta = await cargarDatosConsulta(idx);
+        
+        // Cargar la consulta
+        document.getElementById('sql-editor').value = consulta.sql || '';
+        actualizarEnunciadoMostrado(consulta.enunciado || '');
+        cambiarPestana('sql-tab');
+        
+        // 🔥 SCROLL AUTOMÁTICO AL EDITOR SQL
+        const editorPanel = document.querySelector('.editor-panel');
+        if (editorPanel) {
+            editorPanel.scrollIntoView({ 
+                behavior: 'smooth',  // Desplazamiento suave
+                block: 'start'       // Alinea al inicio del panel
+            });
+        }
+        
+        // Opcional: poner el foco en el editor
+        document.getElementById('sql-editor').focus();
     });
+});
     
     // Editar consulta
     document.querySelectorAll('.btn-edit-query').forEach(btn => {
