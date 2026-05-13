@@ -24,9 +24,9 @@ DATABASES = {
         'conectada': False
     },
     'db3': {
-        'nombre': 'Archivo',
-        'server': 'DESKTOP-F3M1EN1\\herna',
-        'database': 'School',
+        'nombre': 'Adventure',
+        'server': 'DESKTOP-F3M1EN1',
+        'database': 'AdventureWorks2025',
         'driver': '{ODBC Driver 17 for SQL Server}',
         'conectada': False
     }
